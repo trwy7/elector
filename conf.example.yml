@@ -52,7 +52,7 @@ features:
     disable_on_election: true # TODO: implement
     votekick:
       # Let people kick other members by a vote
-      enabled: true # TODO: implement
+      enabled: true
       # Required amount of votes
       required_votes: 4
       # How many times a person can start a votekick
