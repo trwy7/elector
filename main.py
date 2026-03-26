@@ -6,6 +6,7 @@ import yaml
 import logging
 from datetime import timedelta
 import discord
+from discord.ext import commands # i dislike commands.cooldown, but i don't know any other simple way to do rate limits
 from uwuipy import Uwuipy
 
 # Logging
@@ -345,6 +346,8 @@ if config['features']['voice_rooms']['enabled']:
 
 if config['features']['fun']['timeout']['enabled']:
     @bot.user_command(name="timeout")
+    @commands.cooldown(config['features']['fun']['timeout']['times'], config['features']['fun']['timeout']['cooldown'], commands.BucketType.user)
+    # FIXME: make cooldown error message
     async def timeout_cmd(ctx: discord.ApplicationContext, member: discord.Member):
         perm = await get_user_perm_level(ctx.user) # type: ignore
         if config['permissions']['allow_timeout'] > perm:
