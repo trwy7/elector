@@ -184,8 +184,9 @@ if config['features']['voice_rooms']['enabled']:
                 discord.ui.Label(
                     "Name",
                     discord.ui.InputText(
-                        placeholder=name + "'s VC",
-                        max_length=20
+                        placeholder=name,
+                        max_length=20,
+                        required=False
                     )
                 ),
                 discord.ui.Label(
@@ -205,7 +206,7 @@ if config['features']['voice_rooms']['enabled']:
                         options=[
                             discord.SelectOption(label="Voice", value="voice", emoji="📞", default=True),
                             discord.SelectOption(label="Text", value="text", emoji="💬", default=True),
-                            discord.SelectOption(label="Stream", value="stream", emoji="📺", default=True),
+                            discord.SelectOption(label="Video", value="video", emoji="📺", default=True),
                         ],
                         required=False,
                         min_values=0,
@@ -219,7 +220,7 @@ if config['features']['voice_rooms']['enabled']:
                         placeholder="Unlimited",
                         max_length=2,
                         min_length=0,
-                        required=None
+                        required=False
                     ),
                     description="Nobody can join after this limit, excluding you (e.g. 1, 5, 7)"
                 ),
@@ -237,38 +238,42 @@ if config['features']['voice_rooms']['enabled']:
                         await interaction.respond(f"You can only have {str(maxr)} room" + ('' if maxr == 1 else 's'))
                         return
             # Get the responses
-            name = self.children[0].item.value # type: ignore
+            name = self.children[0].item.value if self.children[0].item.value else interaction.user.name # type: ignore
             priv = int(self.children[1].item.values[0]) if len(self.children[1].item.values) == 1 else 0 # type: ignore
+            can_talk = "voice" in self.children[2].item.values
+            can_text = "text" in self.children[2].item.values
+            can_stream = "video" in self.children[2].item.values
+            user_limit = int(self.children[3].item.value)
             # Set the permissions
             perms = {
-                SERVER.default_role: discord.PermissionOverwrite(view_channel=False, send_messages=False, connect=False),
-                interaction.user: discord.PermissionOverwrite(view_channel=True, send_messages=True, connect=True)
+                SERVER.default_role: discord.PermissionOverwrite(view_channel=False, send_messages=False, connect=False, speak=can_talk, stream=can_stream),
+                interaction.user: discord.PermissionOverwrite(view_channel=True, send_messages=True, connect=True, priority_speaker=True, mute_members=True, deafen_members=True)
             }
             if priv == 0:
-                perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=True, connect=True)
+                perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True)
             else:
                 perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=False, connect=False)
             if priv <= 1:
-                perms[PLUS_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=True, connect=True)
+                perms[PLUS_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True)
             if priv <= 2:
-                perms[VIP_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=True, connect=True)
+                perms[VIP_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True)
             if priv <= 3:
-                perms[VICE_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=True, connect=True)
+                perms[VICE_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True)
             # Create the channel
-            # TODO: Make the last two modal boxes work
             crvc = await VOICE_CATEGORY.create_voice_channel(
                 name=name,
                 reason=f"{interaction.user.name} requested creation", # type: ignore
-                overwrites=perms
+                overwrites=perms,
+                user_limit=user_limit
             )
             await crvc.set_status("Created by " + interaction.user.name) # type: ignore
             if interaction.user.voice: # type: ignore
                 # Move them into their new voice channel
                 await interaction.user.move_to(crvc, reason="User made voice channel") # type: ignore
-                await interaction.followup.send(f"You have been moved to {crvc.mention}.", ephemeral=True)
+                await interaction.followup.send(f"You have been moved to {crvc.mention}.", ephemeral=True, delete_after=10)
             else:
                 # Tell them to join it
-                await interaction.followup.send(f"Go join {crvc.mention}, the channel will close automatically in {str(config['features']['voice_rooms']['join_grace'])} seconds if nobody joins.", ephemeral=True)
+                await interaction.followup.send(f"Go join {crvc.mention}, the channel will close automatically in {str(config['features']['voice_rooms']['join_grace'])} seconds if nobody joins.", ephemeral=True, delete_after=config['features']['voice_rooms']['join_grace'] + 2)
                 # Wait and see
                 await asyncio.sleep(config['features']['voice_rooms']['join_grace'])
                 # Check if anyone is in
@@ -276,7 +281,7 @@ if config['features']['voice_rooms']['enabled']:
                 # Delete if not
                 if len(nvc.members) == 0: # type: ignore
                     await nvc.delete(reason="Nobody joined in time") # type: ignore
-                    await interaction.followup.send("Nobody joined in time", ephemeral=True)
+                    await interaction.followup.send("Nobody joined in time", ephemeral=True, delete_after=10)
 
     @vc_cmds.command(name="create", description="Create a voice channel")
     @discord.guild_only()
