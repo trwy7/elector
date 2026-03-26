@@ -60,6 +60,13 @@ features:
       enabled: true
       # Required amount of votes
       required_votes: 4
+  voice_rooms:
+    # Let people make their own voice channels that they manage, they are deleted after everyone leaves
+    enabled: true
+    # How many rooms can one person have
+    max_rooms: 1
+    # Joining grace period, in seconds, should be 10+
+    join_grace: 15
   fun:
     timeout:
       # Let people time eachother out
