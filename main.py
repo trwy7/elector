@@ -312,7 +312,6 @@ if config['features']['voice_rooms']['enabled']:
     @vc_cmds.command(name="create", description="Create a voice channel")
     @discord.guild_only()
     async def vc_create_cmd(ctx: discord.ApplicationContext):
-        # TODO: make these delete on leave
         # Make sure they are allowed to make rooms
         perm = await get_user_perm_level(ctx.user) # type: ignore
         if config['permissions']['allow_create_room'] > perm:
@@ -347,7 +346,6 @@ if config['features']['voice_rooms']['enabled']:
 if config['features']['fun']['timeout']['enabled']:
     @bot.user_command(name="timeout")
     @commands.cooldown(config['features']['fun']['timeout']['times'], config['features']['fun']['timeout']['cooldown'], commands.BucketType.user)
-    # FIXME: make cooldown error message
     async def timeout_cmd(ctx: discord.ApplicationContext, member: discord.Member):
         perm = await get_user_perm_level(ctx.user) # type: ignore
         if config['permissions']['allow_timeout'] > perm:
@@ -374,6 +372,24 @@ async def on_voice_state_update(member, before, after):
             del vc_owners[before.channel.id]
         await before.channel.delete(reason="The room is now empty")
         logger.info("Deleted stale voice channel")
+
+# Errors
+
+@bot.event
+async def on_application_command_error(ctx: discord.ApplicationContext, error: discord.DiscordException):
+    if isinstance(error, commands.CommandOnCooldown):
+        hours, remainder = divmod(int(error.retry_after), 3600)
+        minutes, seconds = divmod(remainder, 60)
+        text = []
+        if hours > 0:
+            text.append(str(hours) + " hours")
+        if minutes > 0:
+            text.append(str(minutes) + " minutes")
+        if seconds > 0:
+            text.append(str(seconds) + " seconds")
+        await ctx.respond("This command is currently on cooldown! Please wait " + ' '.join(text), ephemeral=True)
+    else:
+        raise error
 
 # Background
 
