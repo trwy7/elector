@@ -2,9 +2,10 @@ import os
 import sys
 import shutil
 import asyncio
-import yaml
+import re
 import logging
 from datetime import timedelta, datetime
+import yaml
 import discord
 from discord.ext import commands # i dislike commands.cooldown, but i don't know any other simple way to do rate limits
 from uwuipy import Uwuipy
@@ -350,6 +351,7 @@ if config['features']['fun']['timeout']['enabled']:
     async def timeout_cmd(ctx: discord.ApplicationContext, member: discord.Member):
         perm = await get_user_perm_level(ctx.user) # type: ignore
         if config['permissions']['allow_timeout'] > perm:
+            # TODO: move into decorator
             await ctx.respond(f"You must be at least {LEVEL_ROLE_MAP[config['permissions']['allow_timeout']].mention} to time someone out", ephemeral=True)
             return
         await ctx.defer()

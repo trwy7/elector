@@ -43,17 +43,9 @@ features:
     overthrow: 6 # TODO: implement
     # Let the leader pick a vice leader after they are elected
     vice-leader: true # TODO: implement
-    # Let the leader rename the server
-    rename:
-      enabled: true # TODO: implement
-      # The server name will be converted to lowercase before matching
-      allowed_regex: ".*" # TODO: implement
-      # The message to respond with if regex matching fails
-      fail_msg: "Your server name is invalid" # TODO: implement
-    # Let the leader change the server icon
-    change_icon: true # TODO: implement
-    # Let the leader rename permission roles
-    rename_roles: false # TODO: implement
+    # Force a vice leader to be picked
+    # If this is on and the leader does not pick a vice leader, their leader role will be revoked
+    force_vice: true # TODO: implement
   kick:
     votekick:
       # Let people kick other members by a vote
@@ -66,6 +58,17 @@ features:
       enabled: true # TODO: implement
     # Disable kicking members during leader votes
     disable_on_election: true # TODO: implement
+  modify:
+    # Let people rename the server
+    rename: true # TODO: implement
+    # The server name will be converted to lowercase before matching
+    allowed_rename_regex: ".*" # TODO: implement
+    # The message to respond with if regex matching fails
+    rename_fail_msg: "Your server name is invalid" # TODO: implement
+    # Let people change the server icon
+    change_icon: true # TODO: implement
+    # Let people rename permission roles
+    rename_roles: false # TODO: implement
   plusvote:
       # Allow people to be voted into the plus role
       # Always disabled during leader votes
@@ -144,3 +147,9 @@ permissions:
   allow_uwuify: 1 # TODO: implement
   # Allow people to make voice rooms
   allow_create_room: 0
+  # Who can rename the server
+  allow_server_rename: 3 # TODO: implement
+  # Who can change the server icon
+  allow_icon_change: 4 # TODO: implement
+  # Who can rename permission roles
+  allow_perm_rename: 4 # TODO: implement
