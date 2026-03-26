@@ -243,7 +243,7 @@ if config['features']['voice_rooms']['enabled']:
             can_talk = "voice" in self.children[2].item.values
             can_text = "text" in self.children[2].item.values
             can_stream = "video" in self.children[2].item.values
-            user_limit = int(self.children[3].item.value)
+            user_limit = int(self.children[3].item.value) if self.children[3].item.value.isdigit() else 0
             # Set the permissions
             perms = {
                 SERVER.default_role: discord.PermissionOverwrite(view_channel=False, send_messages=False, connect=False, speak=can_talk, stream=can_stream),
