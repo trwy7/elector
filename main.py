@@ -247,7 +247,7 @@ if config['features']['voice_rooms']['enabled']:
             # Set the permissions
             perms = {
                 SERVER.default_role: discord.PermissionOverwrite(view_channel=False, send_messages=False, connect=False, speak=can_talk, stream=can_stream),
-                interaction.user: discord.PermissionOverwrite(view_channel=True, send_messages=True, connect=True, priority_speaker=True, mute_members=True, deafen_members=True, speak=True, stream=True)
+                interaction.user: discord.PermissionOverwrite(view_channel=True, send_messages=True, connect=True, priority_speaker=True, mute_members=True, deafen_members=True, move_members=True, speak=True, stream=True)
             }
             if priv == 0:
                 perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True)
