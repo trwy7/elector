@@ -50,17 +50,17 @@ uwulib = Uwuipy(
 
 SERVER = None
 
-ANNOUNCE_CHANNEL: discord.TextChannel = None
-VOICE_CHANNEL: discord.VoiceChannel = None
-LOG_CHANNEL: discord.TextChannel = None
-VOICE_CATEGORY: discord.CategoryChannel = None
-VOTE_CATEGORY: discord.CategoryChannel = None
+ANNOUNCE_CHANNEL: discord.TextChannel = None # type: ignore
+VOICE_CHANNEL: discord.VoiceChannel = None # type: ignore
+LOG_CHANNEL: discord.TextChannel = None # type: ignore
+VOICE_CATEGORY: discord.CategoryChannel = None # type: ignore
+VOTE_CATEGORY: discord.CategoryChannel = None # type: ignore
 
-LEADER_ROLE = None
-VICE_ROLE = None
-VIP_ROLE = None
-PLUS_ROLE = None
-GUEST_ROLE = None
+LEADER_ROLE: discord.Role = None # type: ignore
+VICE_ROLE: discord.Role = None # type: ignore
+VIP_ROLE: discord.Role = None # type: ignore
+PLUS_ROLE: discord.Role = None # type: ignore
+GUEST_ROLE: discord.Role = None # type: ignore
 
 # Bot setup
 
@@ -85,16 +85,30 @@ async def on_ready():
 
     SERVER = ANNOUNCE_CHANNEL.guild
 
-    LEADER_ROLE = SERVER.get_role(config['roles']['leader'])
-    VICE_ROLE = SERVER.get_role(config['roles']['vice-leader'])
-    VIP_ROLE = SERVER.get_role(config['roles']['vip_role'])
-    PLUS_ROLE = SERVER.get_role(config['roles']['plus_role'])
-    GUEST_ROLE = SERVER.get_role(config['roles']['guest_role'])
+    LEADER_ROLE = SERVER.get_role(config['roles']['leader']) # type: ignore
+    VICE_ROLE = SERVER.get_role(config['roles']['vice-leader']) # type: ignore
+    VIP_ROLE = SERVER.get_role(config['roles']['vip_role']) # type: ignore
+    PLUS_ROLE = SERVER.get_role(config['roles']['plus_role']) # type: ignore
+    GUEST_ROLE = SERVER.get_role(config['roles']['guest_role']) # type: ignore
 
     await bot.sync_commands()
     init_complete = True
 
 # Functions
+
+async def get_user_perm_level(member: discord.Member):
+    user_roles = {role.id for role in member.roles}
+    if LEADER_ROLE.id in user_roles:
+        return 4
+    elif VICE_ROLE.id in user_roles:
+        return 3
+    elif VIP_ROLE.id in user_roles:
+        return 2
+    elif PLUS_ROLE.id in user_roles:
+        return 1
+    elif GUEST_ROLE.id in user_roles:
+        return 0
+    return -1 # should be reserved for bots and the owner account
 
 async def public_log(embed: discord.Embed):
     await ANNOUNCE_CHANNEL.send(embed=embed)
@@ -107,7 +121,7 @@ async def admin_log(embed: discord.Embed):
 @bot.slash_command(name="ping", description="Make sure the bot is online")
 @discord.default_permissions(administrator=True)
 async def ping(ctx: discord.ApplicationContext):
-    await ctx.respond("Pong!", ephemeral=True)
+    await ctx.respond("Pong! You have permission level " + str(await get_user_perm_level(ctx.user)), ephemeral=True) # type: ignore
 
 # Background
 
