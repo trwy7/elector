@@ -366,10 +366,10 @@ if config['features']['fun']['timeout']['enabled']:
 async def on_member_join(member: discord.Member):
     # Give them guest 
     if not member.bot:
-        member.add_roles(GUEST_ROLE, reason="New member")
+        await member.add_roles(GUEST_ROLE, reason="New member")
     # Give them vip if on the list
     if member.id in config['vips']:
-        member.add_roles(VIP_ROLE, reason="New VIP member")
+        await member.add_roles(VIP_ROLE, reason="New VIP member")
 
 @bot.event
 async def on_voice_state_update(member: discord.Member, before, after):
