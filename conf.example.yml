@@ -108,3 +108,8 @@ permissions:
   allow_uwuify: 1
   # Allow people to make voice rooms
   allow_create_room: 0
+  # Bypass getting kicked by vote
+  # TODO: Make sure people have a minimum of 0 to get kicked
+  bypass_votekick: 2
+  # Bypass getting kicked by leader
+  bypass_kick: 3
