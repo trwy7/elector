@@ -341,6 +341,16 @@ if config['features']['voice_rooms']['enabled']:
             CreateVCModal(ctx.user.name, pvalid)
         )
 
+## Kicking
+
+### Votekick
+
+if config['features']['kick']['votekick']['enabled']:
+    @bot.user_command(name="timeout")
+    @commands.cooldown(config['features']['kick']['votekick']['times'], config['features']['kick']['votekick']['cooldown'], commands.BucketType.user)
+    async def timeout_cmd(ctx: discord.ApplicationContext, member: discord.Member):
+        pass
+
 ## Fun
 
 ### Timeout
@@ -447,6 +457,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                             await admin_log(discord.Embed(color=discord.Color.yellow(), title="Votekick failed with error", description="The votekick failed and the user was not found"))
                             await asyncio.sleep(60)
                             await message.channel.delete("Vote failed and member was not found.")
+
 # Errors
 
 @bot.event

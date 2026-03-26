@@ -48,6 +48,8 @@ features:
     # If this is on and the leader does not pick a vice leader, their leader role will be revoked
     force_vice: true # TODO: implement
   kick:
+    # Disable kicking members during leader votes
+    disable_on_election: true # TODO: implement
     votekick:
       # Let people kick other members by a vote
       enabled: true # TODO: implement
@@ -65,8 +67,6 @@ features:
       times: 3 # TODO: implement
       # How often their rate limit gets refreshed, in seconds
       cooldown: 43200 # TODO: implement
-    # Disable kicking members during leader votes
-    disable_on_election: true # TODO: implement
   modify:
     # Let people rename the server
     rename: true # TODO: implement
