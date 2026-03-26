@@ -17,7 +17,7 @@ channels:
   # A category for all votes
   # Same as the rooms category, nobody should have view permission
   vote_category: 0000000000
-  # Vote results will be sent here as a log, should be private
+  # Logs about usage are sent here, should be private
   logs: 0000000000
 
 roles:
