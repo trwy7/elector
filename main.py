@@ -4,6 +4,7 @@ import shutil
 import asyncio
 import yaml
 import logging
+from datetime import timedelta
 import discord
 from uwuipy import Uwuipy
 
@@ -288,6 +289,7 @@ if config['features']['voice_rooms']['enabled']:
                 overwrites=perms,
                 user_limit=user_limit
             )
+            logger.info("%s created a voice channel: '%s'", interaction.user.name, name)
             await crvc.set_status("Created by " + interaction.user.name) # type: ignore
             if interaction.user.voice: # type: ignore
                 # Move them into their new voice channel
@@ -304,6 +306,7 @@ if config['features']['voice_rooms']['enabled']:
                 if len(nvc.members) == 0: # type: ignore
                     await nvc.delete(reason="Nobody joined in time") # type: ignore
                     await interaction.followup.send("Nobody joined in time", ephemeral=True, delete_after=10)
+                    logger.info("Nobody joined '%s' in time", name)
 
     @vc_cmds.command(name="create", description="Create a voice channel")
     @discord.guild_only()
@@ -335,7 +338,39 @@ if config['features']['voice_rooms']['enabled']:
         await ctx.send_modal(
             CreateVCModal(ctx.user.name, pvalid)
         )
-        
+
+## Fun
+
+### Timeout
+
+if config['features']['fun']['timeout']['enabled']:
+    @bot.user_command(name="timeout")
+    async def timeout_cmd(ctx: discord.ApplicationContext, member: discord.Member):
+        perm = await get_user_perm_level(ctx.user) # type: ignore
+        if config['permissions']['allow_timeout'] > perm:
+            await ctx.respond(f"You are must be at least {LEVEL_ROLE_MAP[config['permissions']['allow_timeout']].mention} to time someone out")
+            return
+        await ctx.defer()
+        dur = config['features']['fun']['timeout']['leader_duration'] if perm == 4 else config['features']['fun']['timeout']['duration']
+        await member.timeout_for(timedelta(seconds=dur))
+        await ctx.followup.send(f"{member.mention} has been timed out for {str(dur)} seconds.")
+        logger.info("'%s' timed out '%s' for %s seconds", ctx.user.name, member.name, str(dur))
+
+# Events
+
+@bot.event
+async def on_voice_state_update(member, before, after):
+    # A lot in this function will proably be redundant
+    # Check if someone left a room, and it is now empty
+    if config['features']['voice_rooms']['enabled'] and \
+        before.channel and before.channel != after.channel \
+        and before.channel.category and before.channel.category.id == VOICE_CATEGORY.id \
+        and len(before.channel.members) == 0:
+        # It is a room, and is now empty. Delete it
+        if before.channel.id in vc_owners:
+            del vc_owners[before.channel.id]
+        await before.channel.delete(reason="The room is now empty")
+        logger.info("Deleted stale voice channel")
 
 # Background
 
