@@ -52,11 +52,19 @@ features:
       # Let people kick other members by a vote
       enabled: true # TODO: implement
       # Required amount of votes
-      required_votes: 4 # TODO: implement
+      required_votes: 4
+      # How many times a person can start a votekick
+      times: 2
+      # How often their rate limit gets refreshed, in seconds
+      cooldown: 21600
     forcekick:
       # Let people kick others
       # Check permissions for fine control
       enabled: true # TODO: implement
+      # How many times a person can forcekick
+      times: 3 # TODO: implement
+      # How often their rate limit gets refreshed, in seconds
+      cooldown: 43200 # TODO: implement
     # Disable kicking members during leader votes
     disable_on_election: true # TODO: implement
   modify:
@@ -71,14 +79,14 @@ features:
     # Let people rename permission roles
     rename_roles: false # TODO: implement
   plusvote:
-      # Allow people to be voted into the plus role
-      # Always disabled during leader votes
-      enabled: true # TODO: implement
-      # Required amount of votes
-      required_votes: 5 # TODO: implement
-      # Required amount of time in the server to be eligible, in hours
-      # If the bot restarts while the person is in the waiting period, they will be automatically granted eligibility
-      required_wait: 48 # TODO: implement
+    # Allow people to be voted into the plus role
+    # Always disabled during leader votes
+    enabled: true # TODO: implement
+    # Required amount of votes
+    required_votes: 5 # TODO: implement
+    # Required amount of time in the server to be eligible, in hours
+    # If the bot restarts while the person is in the waiting period, they will be automatically granted eligibility
+    required_wait: 48 # TODO: implement
   voice_rooms:
     # Let people make their own voice channels that they manage, they are deleted after everyone leaves
     enabled: true
