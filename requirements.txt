@@ -1,0 +1,5 @@
+#git+https://github.com/Pycord-Development/pycord # dont need dev anymore
+py-cord[speed]==2.7.1
+apscheduler==3.11.2
+uwuipy==1.0.0
+PyYAML==6.0.3

@@ -1,0 +1,9 @@
+services:
+  friend-elector:
+    build:
+      context: .
+    environment:
+      - TZ=America/Denver
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

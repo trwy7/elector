@@ -1,0 +1,71 @@
+# Bot token, required
+token: "whatever_your_token_is"
+# A list of user IDs for VIP members, these people get extra permissions than normal people.
+# You should have at least two.
+vips:
+  - 0000000000
+  - 0000000001
+
+channels:
+  # Public bot announcements, should be your general channel
+  public: 0000000000
+  # The main voice channel, when someone joins, an announcement will be sent to the talk channel
+  voice: 0000000000
+  # A channel category that is used for people to make temporary voice channels
+  # All members (including you) should have view permission disabled, the bot will show/hide individual channels
+  voice_rooms_category: 0000000000
+  # A category for all votes
+  # Same as the rooms category, nobody should have view permission
+  vote_category: 0000000000
+  # Vote results will be sent here as a log, should be private
+  logs: 0000000000
+
+roles:
+  # There can only be one leader
+  leader: 0000000000
+  # Vice leader, not needed if features/leader/vice-leader is false
+  vice-leader: 0000000000
+  # Given to people in the VIP list
+  vip_role: 0000000000
+  # Gets some VIP permissions, but not all
+  plus_role: 0000000000
+  # Given to everyone, including people with higher permissions
+  guest_role: 0000000000
+
+features:
+  leader:
+    # Have people vote for leader every saturday
+    elections: true
+    # Start the vote again when the leader leaves
+    elect_on_leave: true
+    # Let people overthrow the leader
+    # Set the number of votes needed
+    overthrow: 6
+    # Let the leader pick a vice leader after they are elected
+    vice-leader: true
+    # Let the leader kick people from the server without a vote
+    allow_kick: true
+  fun:
+    timeout:
+      # Let people time eachother out
+      enabled: true
+      # How many times a person can time someone out
+      times: 1
+      # How often their rate limit gets refreshed, in seconds
+      cooldown: 3600
+      # How long the timeout lasts, in seconds
+      duration: 5
+      # How long the timeout lasts if a leader initiated it
+      leader_duration: 30
+    uwu:
+      # Let people uwuify each other
+      # This modifies their messages, e.g. Hello -> Hewwo
+      enabled: true
+      # How many times a person can uwuify someone
+      times: 1
+      # How often their rate limit gets refreshed, in seconds
+      cooldown: 1800
+      # How long the timeout lasts, in seconds
+      duration: 30
+      # How long the timeout lasts if a leader initiated it
+      leader_duration: 60
