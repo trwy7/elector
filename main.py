@@ -371,6 +371,9 @@ if config['features']['kick']['votekick']['enabled']:
             await ctx.respond(member.mention + " is not in this server")
         vperm = await get_user_perm_level(member)
         # Make sure they can be kicked
+        if ctx.user.id == member.id:
+            await ctx.respond("You cannot kick yourself", ephemeral=True)
+            return
         if vperm >= config['permissions']['bypass_votekick']:
             await ctx.respond("You cannot kick " + member.mention, ephemeral=True)
             return
@@ -406,7 +409,7 @@ if config['features']['kick']['votekick']['enabled']:
         await m.add_reaction("✅")
         await m.add_reaction("❌")
         # Send a link to the channel
-        await ctx.respond(f"Vote in {c.mention}", ephemeral=True)
+        await ctx.respond(f"Go to {c.mention}", ephemeral=True)
 
 ## Fun
 
