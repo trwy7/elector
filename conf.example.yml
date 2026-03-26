@@ -35,46 +35,46 @@ roles:
 features:
   leader:
     # Have people vote for leader every saturday
-    elections: true
+    elections: true # TODO: implement
     # Start the vote again when the leader leaves
-    elect_on_leave: true
+    elect_on_leave: true # TODO: implement
     # Let people overthrow the leader
     # Set the number of votes needed
-    overthrow: 6
+    overthrow: 6 # TODO: implement
     # Let the leader pick a vice leader after they are elected
-    vice-leader: true
+    vice-leader: true # TODO: implement
     # Let the leader rename the server
     rename:
-      enabled: true
+      enabled: true # TODO: implement
       # The server name will be converted to lowercase before matching
-      allowed_regex: ".*"
+      allowed_regex: ".*" # TODO: implement
       # The message to respond with if regex matching fails
-      fail_msg: "Your server name is invalid"
+      fail_msg: "Your server name is invalid" # TODO: implement
     # Let the leader change the server icon
-    change_icon: true
+    change_icon: true # TODO: implement
     # Let the leader rename permission roles
-    rename_roles: false
+    rename_roles: false # TODO: implement
   kick:
     votekick:
       # Let people kick other members by a vote
-      enabled: true
+      enabled: true # TODO: implement
       # Required amount of votes
-      required_votes: 4
+      required_votes: 4 # TODO: implement
     forcekick:
       # Let people kick others
       # Check permissions for fine control
-      enabled: true
+      enabled: true # TODO: implement
     # Disable kicking members during leader votes
-    disable_on_election: true
+    disable_on_election: true # TODO: implement
   plusvote:
       # Allow people to be voted into the plus role
       # Always disabled during leader votes
-      enabled: true
+      enabled: true # TODO: implement
       # Required amount of votes
-      required_votes: 5
+      required_votes: 5 # TODO: implement
       # Required amount of time in the server to be eligible, in hours
       # If the bot restarts while the person is in the waiting period, they will be automatically granted eligibility
-      required_wait: 48
+      required_wait: 48 # TODO: implement
   voice_rooms:
     # Let people make their own voice channels that they manage, they are deleted after everyone leaves
     enabled: true
@@ -100,15 +100,15 @@ features:
     uwu:
       # Let people uwuify each other
       # This modifies their messages, e.g. Hello -> Hewwo
-      enabled: true
+      enabled: true # TODO: implement
       # How many times a person can uwuify someone
-      times: 1
+      times: 1 # TODO: implement
       # How often their rate limit gets refreshed, in seconds
-      cooldown: 1800
+      cooldown: 1800 # TODO: implement
       # How long the uwuify lasts, in seconds
-      duration: 30
+      duration: 30 # TODO: implement
       # How long the uwuify lasts if a leader initiated it
-      leader_duration: 60
+      leader_duration: 60 # TODO: implement
 
 permissions:
   # DUE TO DISCORD LIMITATIONS THIS WILL NOT HIDE COMMANDS IN THE UI
@@ -120,27 +120,27 @@ permissions:
   # plus - 1
   # all - 0
   # Allow people to become leader, should be 2 at max
-  allow_leader: 2
+  allow_leader: 2 # TODO: implement
   # Allow people to vote in leader elections
-  allow_leader_vote: 1
+  allow_leader_vote: 1 # TODO: implement
   # Allow people to start a votekick
-  allow_kick_start: 2
+  allow_kick_start: 2 # TODO: implement
   # Allow people to vote in kick votes
-  allow_kick_vote: 2
+  allow_kick_vote: 2 # TODO: implement
   # Bypass getting kicked by vote
   # TODO: Make sure people have a minimum of 0 to get kicked
-  bypass_votekick: 2
+  bypass_votekick: 2 # TODO: implement
   # Allow people to kick other people, no vote required
-  allow_forcekick: 3
+  allow_forcekick: 3 # TODO: implement
   # Bypass getting forcekicked
-  bypass_forcekick: 3
+  bypass_forcekick: 3 # TODO: implement
   # Allow people to start promotion votes
-  allow_promote_start: 3
+  allow_promote_start: 3 # TODO: implement
   # Allow people to vote in promotion votes (guest to plus)
-  allow_promote_vote: 2
+  allow_promote_vote: 2 # TODO: implement
   # Allow people to use the timeout command
   allow_timeout: 2
   # Allow people to use the uwuify command
-  allow_uwuify: 1
+  allow_uwuify: 1 # TODO: implement
   # Allow people to make voice rooms
   allow_create_room: 0
