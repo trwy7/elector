@@ -3,6 +3,7 @@ import sys
 import shutil
 import asyncio
 import logging
+import functools
 from datetime import timedelta, datetime
 from threading import Lock
 import yaml
@@ -173,6 +174,19 @@ async def public_log(embed: discord.Embed):
 async def admin_log(embed: discord.Embed):
     await LOG_CHANNEL.send(embed=embed)
 
+## Decorators
+
+def requireperm(level: int):
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(ctx: discord.ApplicationContext, *args, **kwargs):
+            if level > await get_user_perm_level(ctx.user):
+                await ctx.respond(f"You must be at least {LEVEL_ROLE_MAP[level].mention} to run this command", ephemeral=True)
+                return None
+            return await func(ctx, *args, **kwargs)
+        return wrapper
+    return decorator
+
 # Commands
 
 @bot.slash_command(name="ping", description="Make sure the bot is online")
@@ -312,12 +326,10 @@ if config['features']['voice_rooms']['enabled']:
 
     @vc_cmds.command(name="create", description="Create a voice channel")
     @discord.guild_only()
+    @requireperm(config['permissions']['allow_create_room'])
     async def vc_create_cmd(ctx: discord.ApplicationContext):
         # Make sure they are allowed to make rooms
         perm = await get_user_perm_level(ctx.user) # type: ignore
-        if config['permissions']['allow_create_room'] > perm:
-            await ctx.respond(f"You must be at least {LEVEL_ROLE_MAP[config['permissions']['allow_create_room']].mention} to create a voice channel", ephemeral=True)
-            return
         # Make sure they have less than the max amount of rooms
         owned = 0
         maxr = config['features']['voice_rooms']['max_rooms']
@@ -346,10 +358,16 @@ if config['features']['voice_rooms']['enabled']:
 ### Votekick
 
 if config['features']['kick']['votekick']['enabled']:
-    @bot.user_command(name="timeout")
+    @bot.user_command(name="votekick")
+    @requireperm(config['permissions']['allow_kick_start'])
     @commands.cooldown(config['features']['kick']['votekick']['times'], config['features']['kick']['votekick']['cooldown'], commands.BucketType.user)
-    async def timeout_cmd(ctx: discord.ApplicationContext, member: discord.Member):
-        pass
+    async def votekick_cmd(ctx: discord.ApplicationContext, member: discord.Member):
+        vperm = await get_user_perm_level(member)
+        if vperm >= config['permissions']['bypass_votekick']:
+            await ctx.respond("You cannot kick " + member.mention, ephemeral=True)
+        if vperm < 0:
+            await ctx.respond("You cannot kick " + member.mention, ephemeral=True)
+        
 
 ## Fun
 
@@ -357,13 +375,10 @@ if config['features']['kick']['votekick']['enabled']:
 
 if config['features']['fun']['timeout']['enabled']:
     @bot.user_command(name="timeout")
+    @requireperm(config['permissions']['allow_timeout'])
     @commands.cooldown(config['features']['fun']['timeout']['times'], config['features']['fun']['timeout']['cooldown'], commands.BucketType.user)
     async def timeout_cmd(ctx: discord.ApplicationContext, member: discord.Member):
         perm = await get_user_perm_level(ctx.user) # type: ignore
-        if config['permissions']['allow_timeout'] > perm:
-            # TODO: move into decorator
-            await ctx.respond(f"You must be at least {LEVEL_ROLE_MAP[config['permissions']['allow_timeout']].mention} to time someone out", ephemeral=True)
-            return
         await ctx.defer()
         dur = config['features']['fun']['timeout']['leader_duration'] if perm == 4 else config['features']['fun']['timeout']['duration']
         await member.timeout_for(timedelta(seconds=dur))
