@@ -92,6 +92,10 @@ async def on_ready():
     PLUS_ROLE = SERVER.get_role(config['roles']['plus_role']) # type: ignore
     GUEST_ROLE = SERVER.get_role(config['roles']['guest_role']) # type: ignore
 
+    for dc in VOICE_CATEGORY.channels:
+        logger.info("Deleting old channel: %s", dc.name)
+        await dc.delete(reason="Deleting voice rooms on bot start")
+
     await bot.sync_commands()
     init_complete = True
 
@@ -251,6 +255,7 @@ if config['features']['voice_rooms']['enabled']:
             if priv <= 3:
                 perms[VICE_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=True, connect=True)
             # Create the channel
+            # TODO: Make the last two modal boxes work
             crvc = await VOICE_CATEGORY.create_voice_channel(
                 name=name,
                 reason=f"{interaction.user.name} requested creation", # type: ignore
