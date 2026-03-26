@@ -365,6 +365,8 @@ if config['features']['kick']['votekick']['enabled']:
     @commands.cooldown(config['features']['kick']['votekick']['times'], config['features']['kick']['votekick']['cooldown'], commands.BucketType.user)
     async def votekick_cmd(ctx: discord.ApplicationContext, member: discord.Member):
         await ctx.response.defer(ephemeral=True)
+        if not isinstance(member, discord.Member):
+            await ctx.respond(member.mention + " is not in this server")
         vperm = await get_user_perm_level(member)
         if vperm >= config['permissions']['bypass_votekick']:
             await ctx.respond("You cannot kick " + member.mention, ephemeral=True)
