@@ -192,7 +192,7 @@ if config['features']['voice_rooms']['enabled']:
                 discord.ui.Label(
                     "Privacy",
                     discord.ui.Select(
-                        placeholder="Lock your VC",
+                        placeholder="Lock your room",
                         options=priv,
                         required=False,
                         max_values=1
@@ -212,7 +212,7 @@ if config['features']['voice_rooms']['enabled']:
                         min_values=0,
                         max_values=3
                     ),
-                    description="Decide what other people can do in your vc, you always get everything"
+                    description="Decide what other people can do in your room, you always get everything"
                 ),
                 discord.ui.Label(
                     "Max people",
@@ -222,7 +222,7 @@ if config['features']['voice_rooms']['enabled']:
                         min_length=0,
                         required=False
                     ),
-                    description="Nobody can join after this limit, excluding you (e.g. 1, 5, 7)"
+                    description="The max amount of people who can be in your room"
                 ),
                 title="Create VC",
             )
