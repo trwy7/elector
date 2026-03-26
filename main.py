@@ -487,9 +487,9 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                             # log it
                             await admin_log(discord.Embed(color=discord.Color.green(), title="Votekick passed!", description=f"{member.mention} was kicked. The results were {len(approved)}-{len(opposed)}", fields=[discord.EmbedField("For", "\n".join([vmember.mention for vmember in approved])), discord.EmbedField("Against", "\n".join([vmember.mention for vmember in opposed]))]))
                             await message.channel.send(f"{member.mention} was kicked! The results were {len(approved)}-{len(opposed)}")
+                            await ANNOUNCE_CHANNEL.send(f"{member.mention} was kicked by a {len(approved)}-{len(opposed)} vote.")
                             await asyncio.sleep(60)
                             await message.channel.delete(reason="Vote passed!")
-                            await ANNOUNCE_CHANNEL.send(f"{member.mention} was kicked by a {len(approved)}-{len(opposed)} vote.")
                         else:
                             # race condition (probably)
                             await message.channel.send("Could not find <@" + message.channel.topic.split("<@")[-1])
