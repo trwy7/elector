@@ -43,9 +43,6 @@ features:
     overthrow: 6
     # Let the leader pick a vice leader after they are elected
     vice-leader: true
-    # Let the leader kick people from the server without a vote
-    # This is locked during elections
-    allow_kick: true
     # Let the leader rename the server
     rename:
       enabled: true
@@ -57,12 +54,27 @@ features:
     change_icon: true
     # Let the leader rename permission roles
     rename_roles: false
-  plus:
-    vote:
-      # Allow people to be voted into the plus role
+  kick:
+    votekick:
+      # Let people kick other members by a vote
       enabled: true
       # Required amount of votes
       required_votes: 4
+    forcekick:
+      # Let people kick others
+      # Check permissions for fine control
+      enabled: true
+    # Disable kicking members during leader votes
+    disable_on_election: true
+  plusvote:
+      # Allow people to be voted into the plus role
+      # Always disabled during leader votes
+      enabled: true
+      # Required amount of votes
+      required_votes: 5
+      # Required amount of time in the server to be eligible, in hours
+      # If the bot restarts while the person is in the waiting period, they will be automatically granted eligibility
+      required_wait: 48
   voice_rooms:
     # Let people make their own voice channels that they manage, they are deleted after everyone leaves
     enabled: true
@@ -115,6 +127,13 @@ permissions:
   allow_kick_start: 2
   # Allow people to vote in kick votes
   allow_kick_vote: 2
+  # Bypass getting kicked by vote
+  # TODO: Make sure people have a minimum of 0 to get kicked
+  bypass_votekick: 2
+  # Allow people to kick other people, no vote required
+  allow_forcekick: 3
+  # Bypass getting forcekicked
+  bypass_forcekick: 3
   # Allow people to start promotion votes
   allow_promote_start: 3
   # Allow people to vote in promotion votes (guest to plus)
@@ -125,8 +144,3 @@ permissions:
   allow_uwuify: 1
   # Allow people to make voice rooms
   allow_create_room: 0
-  # Bypass getting kicked by vote
-  # TODO: Make sure people have a minimum of 0 to get kicked
-  bypass_votekick: 2
-  # Bypass getting kicked by leader
-  bypass_kick: 3
