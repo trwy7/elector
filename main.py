@@ -364,12 +364,14 @@ if config['features']['fun']['timeout']['enabled']:
 
 @bot.event
 async def on_member_join(member: discord.Member):
-    # Give them guest 
+    logger.info(f"'{member.name}' just joined the server")
+    # Give them guest
     if not member.bot:
         await member.add_roles(GUEST_ROLE, reason="New member")
     # Give them vip if on the list
     if member.id in config['vips']:
         await member.add_roles(VIP_ROLE, reason="New VIP member")
+    await admin_log(discord.Embed(color=discord.Color.green(), title="New member", description=f"{member.mention} just joined and was given permission level {await get_user_perm_level(member)}"))
 
 @bot.event
 async def on_voice_state_update(member: discord.Member, before, after):
