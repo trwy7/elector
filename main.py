@@ -445,10 +445,8 @@ async def on_voice_state_update(member: discord.Member, before, after):
 @bot.event
 async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     logger.debug("'%s' just reacted to a message with '%s'", payload.member.name, payload.emoji.name)
-    message = bot.get_message(payload.message_id)
-    if not message:
-        channel = bot.get_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
+    channel = bot.get_channel(payload.channel_id)
+    message = await channel.fetch_message(payload.message_id) # reminder: bot.get_message uses the cache, we cannot use the cache here
     # warning: whole lotta nesting ahead
     if message.channel.category_id == VOTE_CATEGORY.id and message.author.bot:
         logger.debug("A message was reacted in the vote category")
@@ -465,7 +463,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                         # Get all opposed, exclude bots
                         opposed = [u for u in await next((r for r in message.reactions if str(r.emoji) == "❌"), None).users().flatten() if not u.bot]
                         # Get the person
-                        member = SERVER.get_member(message.channel.topic.split("<@")[-1].removesuffix(">"))
+                        member = SERVER.get_member(int(message.channel.topic.split("<@")[-1].removesuffix(">")))
                         if member:
                             # Great! They are still in the server, kick them.
                             await member.kick(reason=f"Votekick passed! ({len(approved)}-{len(opposed)})")
@@ -475,6 +473,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                             await message.channel.send(f"{member.mention} was kicked! The results were {len(approved)}-{len(opposed)}")
                             await asyncio.sleep(60)
                             await message.channel.delete(reason="Vote passed!")
+                            await ANNOUNCE_CHANNEL.send(f"{member.mention} was kicked by a {len(approved)}-{len(opposed)} vote.")
                         else:
                             # race condition (probably)
                             await message.channel.send("Could not find <@" + message.channel.topic.split("<@")[-1])
@@ -486,13 +485,13 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                         # Get all opposed, exclude bots
                         opposed = [u for u in await next((r for r in message.reactions if str(r.emoji) == "✅"), None).users().flatten() if not u.bot]
                         # Get the person
-                        member = SERVER.get_member(message.channel.topic.split("<@")[-1].removesuffix(">"))
+                        member = SERVER.get_member(int(message.channel.topic.split("<@")[-1].removesuffix(">")))
                         if member:
                             # Send confirmation
                             await message.channel.send(f"The vote failed. The results were {len(approved)}-{len(opposed)}")
                             await message.clear_reactions()
                             # log it
-                            await admin_log(discord.Embed(color=discord.Color.red(), title="Votekick failed", description=f"{member.mention} was kicked. The results were {len(approved)}-{len(opposed)}", fields=[discord.EmbedField("For", "\n".join([vmember.mention for vmember in opposed])), discord.EmbedField("Against", "\n".join([vmember.mention for vmember in approved]))]))
+                            await admin_log(discord.Embed(color=discord.Color.red(), title="Votekick failed", description=f"{member.mention} was not kicked. The results were {len(approved)}-{len(opposed)}", fields=[discord.EmbedField("For", "\n".join([vmember.mention for vmember in opposed])), discord.EmbedField("Against", "\n".join([vmember.mention for vmember in approved]))]))
                             await asyncio.sleep(60)
                             await message.channel.delete(reason="Vote failed")
                         else:
