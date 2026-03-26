@@ -54,6 +54,8 @@ features:
       fail_msg: "Your server name is invalid"
     # Let the leader change the server icon
     change_icon: true
+    # Let the leader rename permission roles
+    rename_roles: false
   plus:
     vote:
       # Allow people to be voted into the plus role
