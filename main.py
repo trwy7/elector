@@ -4,7 +4,7 @@ import shutil
 import asyncio
 import yaml
 import logging
-from datetime import timedelta
+from datetime import timedelta, datetime
 import discord
 from discord.ext import commands # i dislike commands.cooldown, but i don't know any other simple way to do rate limits
 from uwuipy import Uwuipy
@@ -371,7 +371,7 @@ async def on_member_join(member: discord.Member):
     # Give them vip if on the list
     if member.id in config['vips']:
         await member.add_roles(VIP_ROLE, reason="New VIP member")
-    await admin_log(discord.Embed(color=discord.Color.green(), title="New member", description=f"{member.mention} just joined and was given permission level {await get_user_perm_level(member)}"))
+    await admin_log(discord.Embed(color=discord.Color.green(), title="New member", description=f"{member.mention} joined", fields=[discord.EmbedField("Is VIP", "Yes" if member.id in config['vips'] else "No")], timestamp=datetime.now()))
 
 @bot.event
 async def on_voice_state_update(member: discord.Member, before, after):
