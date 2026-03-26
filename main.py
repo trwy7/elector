@@ -315,7 +315,8 @@ if config['features']['voice_rooms']['enabled']:
         # Make sure they are allowed to make rooms
         perm = await get_user_perm_level(ctx.user) # type: ignore
         if config['permissions']['allow_create_room'] > perm:
-            await ctx.respond(f"You are must be at least {LEVEL_ROLE_MAP[config['permissions']['allow_create_room']].mention} to create a voice channel", ephemeral=True)
+            await ctx.respond(f"You must be at least {LEVEL_ROLE_MAP[config['permissions']['allow_create_room']].mention} to create a voice channel", ephemeral=True)
+            return
         # Make sure they have less than the max amount of rooms
         owned = 0
         maxr = config['features']['voice_rooms']['max_rooms']
@@ -349,7 +350,7 @@ if config['features']['fun']['timeout']['enabled']:
     async def timeout_cmd(ctx: discord.ApplicationContext, member: discord.Member):
         perm = await get_user_perm_level(ctx.user) # type: ignore
         if config['permissions']['allow_timeout'] > perm:
-            await ctx.respond(f"You are must be at least {LEVEL_ROLE_MAP[config['permissions']['allow_timeout']].mention} to time someone out", ephemeral=True)
+            await ctx.respond(f"You must be at least {LEVEL_ROLE_MAP[config['permissions']['allow_timeout']].mention} to time someone out", ephemeral=True)
             return
         await ctx.defer()
         dur = config['features']['fun']['timeout']['leader_duration'] if perm == 4 else config['features']['fun']['timeout']['duration']
