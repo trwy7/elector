@@ -1,4 +1,3 @@
-from typing import cast
 import os
 import sys
 import shutil
@@ -74,7 +73,7 @@ bot = discord.Bot(intents=intents)
 
 @bot.event
 async def on_ready():
-    global init_complete, ANNOUNCE_CHANNEL, VOICE_CHANNEL, LOG_CHANNEL, VOICE_CATEGORY, VOTE_CATEGORY, LEADER_ROLE, VICE_ROLE, VIP_ROLE, PLUS_ROLE, GUEST_ROLE, SERVER
+    global init_complete, ANNOUNCE_CHANNEL, VOICE_CHANNEL, LOG_CHANNEL, VOICE_CATEGORY, VOTE_CATEGORY, LEADER_ROLE, VICE_ROLE, VIP_ROLE, PLUS_ROLE, GUEST_ROLE, SERVER # pylint: disable=global-statement
     logger.info('Logged in as %s', bot.user)
 
     ANNOUNCE_CHANNEL = bot.get_channel(config['channels']['public']) # type: ignore # these return the right type, but pycord dosent know that
@@ -96,8 +95,46 @@ async def on_ready():
 
 # Functions
 
+def get_user_roles(member: discord.Member):
+    """Get a members role ids in a set
+
+    Args:
+        member (discord.Member)
+
+    Returns:
+        set: The role ids of a member
+    """
+    return {role.id for role in member.roles}
+
+async def is_bot_managed(member: discord.Member):
+    """Check if someone has the guest role, if they do not, the bot should not perform actions against them.
+
+    Args:
+        member (discord.Member)
+
+    Returns:
+        bool: Do they have the guest role
+    """
+    user_roles = get_user_roles(member)
+    if GUEST_ROLE.id in user_roles:
+        return True
+    return False
+
 async def get_user_perm_level(member: discord.Member):
-    user_roles = {role.id for role in member.roles}
+    """Get the permission level of a server member
+
+    Args:
+        member (discord.Member)
+
+    Returns:
+        int: The permission level of a member, -1 means they should not have any permissions, and should be refered as unmanaged
+    """
+    # People who are not real should not get permissions
+    if not is_bot_managed(member):
+        return -1
+    # Check and return their permission level
+    # There is probably a better and faster way to do this
+    user_roles = get_user_roles(member)
     if LEADER_ROLE.id in user_roles:
         return 4
     elif VICE_ROLE.id in user_roles:
@@ -108,7 +145,7 @@ async def get_user_perm_level(member: discord.Member):
         return 1
     elif GUEST_ROLE.id in user_roles:
         return 0
-    return -1 # should be reserved for bots and the owner account
+    return -1 # should not be triggered, but just in case
 
 async def public_log(embed: discord.Embed):
     await ANNOUNCE_CHANNEL.send(embed=embed)
