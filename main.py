@@ -2,9 +2,9 @@ import os
 import sys
 import shutil
 import asyncio
-import re
 import logging
 from datetime import timedelta, datetime
+from threading import Lock
 import yaml
 import discord
 from discord.ext import commands # i dislike commands.cooldown, but i don't know any other simple way to do rate limits
@@ -72,7 +72,7 @@ LEVEL_ROLE_MAP: dict[int, discord.Role] = {}
 
 init_complete = False
 
-intents = discord.Intents.default()
+intents = discord.Intents.default() # maybe consider fine tuning at some point to save bandwidth
 intents.members = True
 intents.message_content = True
 
@@ -373,7 +373,7 @@ async def on_member_join(member: discord.Member):
     # Give them vip if on the list
     if member.id in config['vips']:
         await member.add_roles(VIP_ROLE, reason="New VIP member")
-    await admin_log(discord.Embed(color=discord.Color.green(), title="New member", description=f"{member.mention} joined", fields=[discord.EmbedField("Is VIP", "Yes" if member.id in config['vips'] else "No")], timestamp=datetime.now()))
+    await admin_log(discord.Embed(color=discord.Color.orange(), title="New member", description=f"{member.mention} joined", fields=[discord.EmbedField("Is VIP", "Yes" if member.id in config['vips'] else "No")], timestamp=datetime.now()))
 
 @bot.event
 async def on_voice_state_update(member: discord.Member, before, after):
@@ -388,10 +388,69 @@ async def on_voice_state_update(member: discord.Member, before, after):
         await before.channel.delete(reason="The room is now empty")
         logger.info("Deleted stale voice channel")
 
+### race condition locks
+
+vkick_lock = Lock()
+
+@bot.event
+async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
+    logger.debug("'%s' just reacted to a message with '%s'", payload.member.name, payload.emoji.name)
+    message = bot.get_message(payload.message_id)
+    # warning: whole lotta nesting ahead
+    if message.channel.category_id == VOTE_CATEGORY.id and message.author.bot:
+        match message.channel.name.split("-"):
+            case "kick":
+                # Votekick
+                reaction = next((r for r in message.reactions if str(r.emoji) == str(payload.emoji)), None)
+                # yes i know this is not >=, the bot adds one extra "vote" because of reaction limitations
+                if reaction and reaction.count > config['features']['kick']['votekick']['required_votes']:
+                    # Get everyone who was for kick, exclude bots
+                    approved = [u for u in await reaction.users().flatten() if not u.bot]
+                    if payload.emoji.name == "✅":
+                        # Get all opposed, exclude bots
+                        opposed = [u for u in await next((r for r in message.reactions if str(r.emoji) == "❌"), None).users().flatten() if not u.bot]
+                        # Get the person
+                        member = SERVER.get_member(message.channel.topic.split("<@")[-1].removesuffix(">"))
+                        if member:
+                            # Great! They are still in the server, kick them.
+                            await member.kick(reason=f"Votekick passed! ({len(approved)}-{len(opposed)})")
+                            await message.clear_reactions()
+                            # log it
+                            await admin_log(discord.Embed(color=discord.Color.green(), title="Votekick passed!", description=f"{member.mention} was kicked. The results were {len(approved)}-{len(opposed)}", fields=[discord.EmbedField("For", "\n".join([vmember.mention for vmember in approved])), discord.EmbedField("Against", "\n".join([vmember.mention for vmember in opposed]))]))
+                            await message.channel.send(f"{member.mention} was kicked! The results were {len(approved)}-{len(opposed)}", reference=message)
+                            await asyncio.sleep(60)
+                            await message.channel.delete("Vote passed!")
+                        else:
+                            # race condition (probably)
+                            await message.channel.send("Could not find <@" + message.channel.topic.split("<@")[-1], reference=message)
+                            await message.clear_reactions()
+                            await admin_log(discord.Embed(color=discord.Color.yellow(), title="Votekick passed with error", description="The votekick passed, but the user was not found"))
+                            await asyncio.sleep(60)
+                            await message.channel.delete("Vote passed and member was not found.")
+                    elif payload.emoji.name == "❌":
+                        # Get all opposed, exclude bots
+                        opposed = [u for u in await next((r for r in message.reactions if str(r.emoji) == "✅"), None).users().flatten() if not u.bot]
+                        # Get the person
+                        member = SERVER.get_member(message.channel.topic.split("<@")[-1].removesuffix(">"))
+                        if member:
+                            # Send confirmation
+                            await message.channel.send(f"The vote failed. The results were {len(approved)}-{len(opposed)}", reference=message)
+                            await message.clear_reactions()
+                            # log it
+                            await admin_log(discord.Embed(color=discord.Color.red(), title="Votekick failed", description=f"{member.mention} was kicked. The results were {len(approved)}-{len(opposed)}", fields=[discord.EmbedField("For", "\n".join([vmember.mention for vmember in opposed])), discord.EmbedField("Against", "\n".join([vmember.mention for vmember in approved]))]))
+                            await asyncio.sleep(60)
+                            await message.channel.delete("Vote failed")
+                        else:
+                            # race condition (probably)
+                            await message.channel.send("The vote failed", reference=message)
+                            await message.clear_reactions()
+                            await admin_log(discord.Embed(color=discord.Color.yellow(), title="Votekick failed with error", description="The votekick failed and the user was not found"))
+                            await asyncio.sleep(60)
+                            await message.channel.delete("Vote failed and member was not found.")
 # Errors
 
 @bot.event
-async def on_application_command_error(ctx: discord.ApplicationContext, error: discord.DiscordException):
+async def on_application_command_error(ctx: discord.ApplicationContext, error: discord.DiscordException):#
     if isinstance(error, commands.CommandOnCooldown):
         hours, remainder = divmod(int(error.retry_after), 3600)
         minutes, seconds = divmod(remainder, 60)

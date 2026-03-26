@@ -13,6 +13,7 @@ channels:
   voice: 0000000000
   # A channel category that is used for people to make temporary voice channels
   # All members (including you) should have view permission disabled, the bot will show/hide individual channels
+  # All channels in this category will be wiped on bot start
   voice_rooms_category: 0000000000
   # A category for all votes
   # Same as the rooms category, nobody should have view permission
