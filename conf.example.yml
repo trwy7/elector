@@ -45,6 +45,21 @@ features:
     vice-leader: true
     # Let the leader kick people from the server without a vote
     allow_kick: true
+    # Let the leader rename the server
+    rename:
+      enabled: true
+      # The server name will be converted to lowercase before matching
+      allowed_regex: ".*"
+      # The message to respond with if regex matching fails
+      fail_msg: "Your server name is invalid"
+    # Let the leader change the server icon
+    change_icon: true
+  plus:
+    vote:
+      # Allow people to be voted into the plus role
+      enabled: true
+      # Required amount of votes
+      required_votes: 4
   fun:
     timeout:
       # Let people time eachother out
@@ -65,7 +80,31 @@ features:
       times: 1
       # How often their rate limit gets refreshed, in seconds
       cooldown: 1800
-      # How long the timeout lasts, in seconds
+      # How long the uwuify lasts, in seconds
       duration: 30
-      # How long the timeout lasts if a leader initiated it
+      # How long the uwuify lasts if a leader initiated it
       leader_duration: 60
+
+permissions:
+  # DUE TO DISCORD LIMITATIONS THIS WILL NOT HIDE COMMANDS IN THE UI
+  # To hide commands for roles, go to server settings > integrations > [bot name] > then change the permissions for whatever command you want
+  # Valid options are:
+  # leader - 4
+  # vice - 3
+  # vip - 2
+  # plus - 1
+  # all - 0
+  # Allow people to become leader, should be 2 at max
+  allow_leader: 2
+  # Allow people to vote in leader elections
+  allow_leader_vote: 1
+  # Allow people to vote in kick votes
+  allow_kick_vote: 2
+  # Allow people to vote in promotion votes (guest to plus)
+  allow_promote_vote: 2
+  # Allow people to use the timeout command
+  allow_timeout: 2
+  # Allow people to use the uwuify command
+  allow_uwuify: 1
+  # Allow people to make voice rooms
+  allow_create_room: 0
