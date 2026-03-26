@@ -360,9 +360,19 @@ if config['features']['fun']['timeout']['enabled']:
 
 # Events
 
+## Most of these functions will have redundant code
+
 @bot.event
-async def on_voice_state_update(member, before, after):
-    # A lot in this function will proably be redundant
+async def on_member_join(member: discord.Member):
+    # Give them guest 
+    if not member.bot:
+        member.add_roles(GUEST_ROLE, reason="New member")
+    # Give them vip if on the list
+    if member.id in config['vips']:
+        member.add_roles(VIP_ROLE, reason="New VIP member")
+
+@bot.event
+async def on_voice_state_update(member: discord.Member, before, after):
     # Check if someone left a room, and it is now empty
     if config['features']['voice_rooms']['enabled'] and \
         before.channel and before.channel != after.channel \
