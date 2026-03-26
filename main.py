@@ -63,6 +63,8 @@ VIP_ROLE: discord.Role = None # type: ignore
 PLUS_ROLE: discord.Role = None # type: ignore
 GUEST_ROLE: discord.Role = None # type: ignore
 
+LEVEL_ROLE_MAP: dict[int, discord.Role] = {}
+
 # Bot setup
 
 init_complete = False
@@ -75,7 +77,7 @@ bot = discord.Bot(intents=intents)
 
 @bot.event
 async def on_ready():
-    global init_complete, ANNOUNCE_CHANNEL, VOICE_CHANNEL, LOG_CHANNEL, VOICE_CATEGORY, VOTE_CATEGORY, LEADER_ROLE, VICE_ROLE, VIP_ROLE, PLUS_ROLE, GUEST_ROLE, SERVER # pylint: disable=global-statement
+    global init_complete, ANNOUNCE_CHANNEL, VOICE_CHANNEL, LOG_CHANNEL, VOICE_CATEGORY, VOTE_CATEGORY, LEADER_ROLE, VICE_ROLE, VIP_ROLE, PLUS_ROLE, GUEST_ROLE, SERVER, LEVEL_ROLE_MAP # pylint: disable=global-statement
     logger.info('Logged in as %s', bot.user)
 
     ANNOUNCE_CHANNEL = bot.get_channel(config['channels']['public']) # type: ignore # these return the right type, but pycord dosent know that
@@ -91,6 +93,15 @@ async def on_ready():
     VIP_ROLE = SERVER.get_role(config['roles']['vip_role']) # type: ignore
     PLUS_ROLE = SERVER.get_role(config['roles']['plus_role']) # type: ignore
     GUEST_ROLE = SERVER.get_role(config['roles']['guest_role']) # type: ignore
+
+    LEVEL_ROLE_MAP = {
+        -1: SERVER.default_role,
+        0: GUEST_ROLE,
+        1: PLUS_ROLE,
+        2: VIP_ROLE,
+        3: VICE_ROLE,
+        4: LEADER_ROLE
+    }
 
     for dc in VOICE_CATEGORY.channels:
         logger.info("Deleting old channel: %s", dc.name)
@@ -287,6 +298,10 @@ if config['features']['voice_rooms']['enabled']:
     @discord.guild_only()
     async def vc_create_cmd(ctx: discord.ApplicationContext):
         # TODO: make these delete on leave
+        # Make sure they are allowed to make rooms
+        perm = await get_user_perm_level(ctx.user) # type: ignore
+        if config['permissions']['allow_create_room'] > perm:
+            await ctx.respond(f"You are must be at least {LEVEL_ROLE_MAP[config['permissions']['allow_create_room']].mention} to create a voice channel")
         # Make sure they have less than the max amount of rooms
         owned = 0
         maxr = config['features']['voice_rooms']['max_rooms']
@@ -298,7 +313,6 @@ if config['features']['voice_rooms']['enabled']:
                     return
         # Check who the user can lock their room to
         pvalid = []
-        perm = await get_user_perm_level(ctx.user) # type: ignore
         pvalid.append(discord.SelectOption(label="Just me", value="4", emoji="🙋‍♂️"))
         if perm >= 3:
             pvalid.append(discord.SelectOption(label=VICE_ROLE.name, value="3", emoji="🤝"))
