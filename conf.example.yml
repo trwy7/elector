@@ -44,6 +44,7 @@ features:
     # Let the leader pick a vice leader after they are elected
     vice-leader: true
     # Let the leader kick people from the server without a vote
+    # This is locked during elections
     allow_kick: true
     # Let the leader rename the server
     rename:
@@ -110,8 +111,12 @@ permissions:
   allow_leader: 2
   # Allow people to vote in leader elections
   allow_leader_vote: 1
+  # Allow people to start a votekick
+  allow_kick_start: 2
   # Allow people to vote in kick votes
   allow_kick_vote: 2
+  # Allow people to start promotion votes
+  allow_promote_start: 3
   # Allow people to vote in promotion votes (guest to plus)
   allow_promote_vote: 2
   # Allow people to use the timeout command
