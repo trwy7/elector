@@ -364,16 +364,20 @@ if config['features']['kick']['votekick']['enabled']:
     @requireperm(config['permissions']['allow_kick_start'])
     @commands.cooldown(config['features']['kick']['votekick']['times'], config['features']['kick']['votekick']['cooldown'], commands.BucketType.user)
     async def votekick_cmd(ctx: discord.ApplicationContext, member: discord.Member):
-        await ctx.response.defer(ephemeral=True)
+        # TODO: Delete the channel if they leave
+        await ctx.defer(ephemeral=True)
+        # Make sure they are in the server
         if not isinstance(member, discord.Member):
             await ctx.respond(member.mention + " is not in this server")
         vperm = await get_user_perm_level(member)
+        # Make sure they can be kicked
         if vperm >= config['permissions']['bypass_votekick']:
             await ctx.respond("You cannot kick " + member.mention, ephemeral=True)
             return
         if vperm < 0:
             await ctx.respond("You cannot kick " + member.mention, ephemeral=True)
             return
+        # Set vote permissions
         perms = {
             SERVER.default_role: discord.PermissionOverwrite(view_channel=False),
             member: discord.PermissionOverwrite(view_channel=False),
@@ -390,14 +394,18 @@ if config['features']['kick']['votekick']['enabled']:
             perms[VICE_ROLE] = discord.PermissionOverwrite(view_channel=True)
         if priv <= 4:
             perms[LEADER_ROLE] = discord.PermissionOverwrite(view_channel=True)
+        # Create the channel
         c = await VOTE_CATEGORY.create_text_channel("kick-" + member.name, reason="Votekick started", topic="Vote to kick " + member.mention, overwrites=perms)
+        # Send the message
         m = await c.send(embed=discord.Embed(
             color=discord.Color.blurple(),
             title="Votekick",
             description=f"{ctx.user.mention} wants to kick {member.mention}. {str(config['features']['kick']['votekick']['required_votes'])} reaction{' is' if config['features']['kick']['votekick']['required_votes'] == 1 else "s are"} required."
         ))
+        # Add tallys
         await m.add_reaction("✅")
         await m.add_reaction("❌")
+        # Send a link to the channel
         await ctx.respond(f"Vote in {c.mention}", ephemeral=True)
 
 ## Fun
@@ -411,10 +419,13 @@ if config['features']['fun']['timeout']['enabled']:
     async def timeout_cmd(ctx: discord.ApplicationContext, member: discord.Member):
         perm = await get_user_perm_level(ctx.user) # type: ignore
         await ctx.defer()
+        # Get the duration the timeout should last
         dur = config['features']['fun']['timeout']['leader_duration'] if perm == 4 else config['features']['fun']['timeout']['duration']
+        # Time them out
         await member.timeout_for(timedelta(seconds=dur))
-        await ctx.followup.send(f"{member.mention} has been timed out for {str(dur)} seconds.")
+        # Log it
         logger.info("'%s' timed out '%s' for %s seconds", ctx.user.name, member.name, str(dur))
+        await ctx.followup.send(f"{member.mention} has been timed out for {str(dur)} seconds.")
 
 # Events
 
