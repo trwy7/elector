@@ -701,10 +701,11 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                         opposed = [u for u in await next((r for r in message.reactions if str(r.emoji) == "❌"), None).users().flatten() if not u.bot]
                         # Get the person
                         member = SERVER.get_member(int(message.channel.topic.split("<@")[-1].removesuffix(">")))
+                        await message.clear_reactions()
+                        await message.channel.edit(topic="! The vote passed!")
                         if member:
                             # Great! They are still in the server, kick them.
                             await member.kick(reason=f"Votekick passed! ({len(approved)}-{len(opposed)})")
-                            await message.clear_reactions()
                             # log it
                             await admin_log(discord.Embed(color=discord.Color.green(), title="Votekick passed!", description=f"{member.mention} was kicked.", fields=[discord.EmbedField("Yay", str(len(approved)) + " people voted for a kick\n" + (", ".join([vmember.mention for vmember in approved]))), discord.EmbedField("Nay", str(len(opposed)) + " people voted against a kick\n" + (", ".join([vmember.mention for vmember in opposed])))]))
                             await message.channel.send(f"{member.mention} was kicked! The results were {len(approved)}-{len(opposed)}")
@@ -714,7 +715,6 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                         else:
                             # race condition (probably)
                             await message.channel.send("Could not find <@" + message.channel.topic.split("<@")[-1])
-                            await message.clear_reactions()
                             await admin_log(discord.Embed(color=discord.Color.yellow(), title="Votekick passed with error", description="The votekick passed, but the user was not found"))
                             await asyncio.sleep(60)
                             await message.channel.delete(reason="Vote passed and member was not found.")
@@ -722,11 +722,12 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                         # Get all opposed, exclude bots
                         opposed = [u for u in await next((r for r in message.reactions if str(r.emoji) == "✅"), None).users().flatten() if not u.bot]
                         # Get the person
+                        await message.clear_reactions()
+                        await message.channel.edit(topic="! The vote failed")
                         member = SERVER.get_member(int(message.channel.topic.split("<@")[-1].removesuffix(">")))
                         if member:
                             # Send confirmation
                             await message.channel.send(f"The vote failed. The results were {len(approved)}-{len(opposed)}")
-                            await message.clear_reactions()
                             # log it
                             await admin_log(discord.Embed(color=discord.Color.red(), title="Votekick failed", description=f"{member.mention} was not kicked. The results were {len(approved)}-{len(opposed)}", fields=[discord.EmbedField("Yay", str(len(opposed)) + " people voted for a kick\n" + (", ".join([vmember.mention for vmember in opposed]))), discord.EmbedField("Nay", str(len(approved)) + " people voted against a kick\n" + (", ".join([vmember.mention for vmember in approved])))]))
                             await asyncio.sleep(60)
@@ -734,7 +735,6 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                         else:
                             # race condition (probably)
                             await message.channel.send("The vote failed")
-                            await message.clear_reactions()
                             await admin_log(discord.Embed(color=discord.Color.yellow(), title="Votekick failed with error", description="The votekick failed and the user was not found"))
                             await asyncio.sleep(60)
                             await message.channel.delete(reason="Vote failed and member was not found.")
@@ -751,10 +751,11 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                         opposed = [u for u in await next((r for r in message.reactions if str(r.emoji) == "❌"), None).users().flatten() if not u.bot]
                         # Get the person
                         member = SERVER.get_member(int(message.channel.topic.split("<@")[-1].removesuffix(">")))
+                        await message.clear_reactions()
+                        await message.channel.edit(topic="! The vote passed!")
                         if member:
                             # Great! They are still in the server, promote them.
-                            await member.add_roles(PLUS_ROLE, reason=f"Votekick passed! ({len(approved)}-{len(opposed)})")
-                            await message.clear_reactions()
+                            await member.add_roles(PLUS_ROLE, reason=f"Promotion passed! ({len(approved)}-{len(opposed)})")
                             # log it
                             await admin_log(discord.Embed(color=discord.Color.green(), title="Promotion passed!", description=f"{member.mention} was given {PLUS_ROLE.mention}.", fields=[discord.EmbedField("Yay", str(len(approved)) + " people voted for a promotion\n" + (", ".join([vmember.mention for vmember in approved]))), discord.EmbedField("Nay", str(len(opposed)) + " people voted against a promotion\n" + (", ".join([vmember.mention for vmember in opposed])))]))
                             await message.channel.send(f"{member.mention} was promoted to {PLUS_ROLE.name}! The results were {len(approved)}-{len(opposed)}")
@@ -774,10 +775,11 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                         opposed = [u for u in await next((r for r in message.reactions if str(r.emoji) == "✅"), None).users().flatten() if not u.bot]
                         # Get the person
                         member = SERVER.get_member(int(message.channel.topic.split("<@")[-1].removesuffix(">")))
+                        await message.clear_reactions()
+                        await message.channel.edit(topic="! The vote failed")
                         if member:
                             # Send confirmation
                             await message.channel.send(f"The vote failed. The results were {len(approved)}-{len(opposed)}")
-                            await message.clear_reactions()
                             # log it
                             await admin_log(discord.Embed(color=discord.Color.red(), title="Promotion failed", description=f"{member.mention} was not promoted. The results were {len(approved)}-{len(opposed)}", fields=[discord.EmbedField("Yay", str(len(opposed)) + " people voted for a promotion\n" + (", ".join([vmember.mention for vmember in opposed]))), discord.EmbedField("Nay", str(len(approved)) + " people voted against a promotion\n" + (", ".join([vmember.mention for vmember in approved])))]))
                             await asyncio.sleep(60)
@@ -785,7 +787,6 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                         else:
                             # race condition (probably)
                             await message.channel.send("The vote failed")
-                            await message.clear_reactions()
                             await admin_log(discord.Embed(color=discord.Color.yellow(), title="Promotion failed with error", description="The promotion failed and the user was not found"))
                             await asyncio.sleep(60)
                             await message.channel.delete(reason="Vote failed and member was not found.")
