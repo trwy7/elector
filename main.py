@@ -5,7 +5,6 @@ import shutil
 import asyncio
 import logging
 import functools
-import typing
 from datetime import timedelta, datetime
 from threading import Lock
 import yaml
@@ -545,7 +544,7 @@ if config['features']['modify']['rename_roles']:
     @option("name", description="The new role name")
     @requireperm(config['permissions']['allow_perm_rename'])
     async def srv_role_rename_cmd(ctx: discord.ApplicationContext, role: discord.Role, name: str):
-        logger.info(f"{ctx.user.name} is requesting to rename {role.name} to {name}")
+        logger.info("%s is requesting to rename %s to %s", ctx.user.name, role.name, name)
         level = None
         for v, r in LEVEL_ROLE_MAP.items():
             if r.id == role.id:
@@ -568,7 +567,7 @@ if config['features']['modify']['rename_roles']:
 
 @bot.event
 async def on_member_join(member: discord.Member):
-    logger.info(f"'{member.name}' just joined the server")
+    logger.info("'%s' just joined the server", member.name)
     # Give them guest
     if not member.bot:
         await member.add_roles(GUEST_ROLE, reason="New member")
