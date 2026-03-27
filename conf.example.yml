@@ -138,6 +138,10 @@ features:
       duration: 30 # TODO: implement
       # How long the uwuify lasts if a leader initiated it
       leader_duration: 60 # TODO: implement
+    autoreply: # If you want no autoreply, delete below and replace with []
+      - match: "ping" # this is regex
+        send: "pong" # what to reply with
+        delete: false # if the bot should delete the original
 
 permissions:
   # DUE TO DISCORD LIMITATIONS THIS WILL NOT HIDE COMMANDS IN THE UI

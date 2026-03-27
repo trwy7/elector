@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 import shutil
 import asyncio
 import logging
@@ -536,16 +537,6 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
         elif config['features']['announce_main_call']['on_leave']:
             await ANNOUNCE_CHANNEL.send(f"{member.mention} left {VOICE_CHANNEL.mention}")
 
-@tasks.loop(minutes=30)
-async def remove_old_vcms():
-    now = datetime.now()
-    expired_c = [k for k, v in voice_capability_map.items() if v[2] < now]
-    for key in expired_c:
-        voice_capability_map.pop(key, None)
-    logger.debug("Cleaned %s expired vcms", str(len(expired_c)))
-
-remove_old_vcms.start()
-
 @bot.event
 async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     logger.debug("'%s' reacted to a message with '%s'", payload.member.name, payload.emoji.name)
@@ -660,6 +651,30 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                             await asyncio.sleep(60)
                             await message.channel.delete(reason="Vote failed and member was not found.")
 
+arlist: list[tuple[re.Pattern, str, bool]] = [
+    (re.compile(s['match']), s['send'], s['delete'])
+    for s in config['features']['fun']['autoreply']
+]
+
+@bot.event
+async def on_message(message: discord.Message):
+    logger.debug("New message from '%s'", message.author.name)
+    if message.author.bot:
+        return
+    # Autoreply
+    for ar in arlist:
+        # Check the regex
+        if re.fullmatch(ar[0], message.content):
+            # It matches!
+            logger.info("Sending autoreply: %s", ar[1])
+            # If we are going to delete the message, do not reply to it
+            sr = {"reference": message} if not ar[2] else {}
+            # Send our reply
+            await message.channel.send(ar[1], **sr)
+            # If set to delete the message, delete it
+            if ar[2]:
+                await message.delete(reason="Autoreply")
+
 # Errors
 
 @bot.event
@@ -679,6 +694,16 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: d
         raise error
 
 # Background
+
+@tasks.loop(minutes=30)
+async def remove_old_vcms():
+    now = datetime.now()
+    expired_c = [k for k, v in voice_capability_map.items() if v[2] < now]
+    for key in expired_c:
+        voice_capability_map.pop(key, None)
+    logger.debug("Cleaned %s expired vcms", str(len(expired_c)))
+
+remove_old_vcms.start()
 
 # Let's run!
 
