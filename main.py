@@ -400,6 +400,10 @@ if config['features']['kick']['votekick']['enabled']:
             await ctx.respond(member.mention + " is not in this server")
             return
         vperm = await get_user_perm_level(member)
+        # Prevent self-kick
+        if ctx.user.id == member.id:
+            await ctx.respond("You cannot kick yourself", ephemeral=True)
+            return
         # Make sure there is not already a vote
         nc: discord.CategoryChannel = bot.get_channel(VOTE_CATEGORY.id) # prevents cache issues
         for vc in nc.channels:
@@ -407,9 +411,6 @@ if config['features']['kick']['votekick']['enabled']:
                 await ctx.respond("There is already a kick vote going on in " + vc.mention, ephemeral=True)
                 return
         # Make sure they can be kicked
-        if ctx.user.id == member.id:
-            await ctx.respond("You cannot kick yourself", ephemeral=True)
-            return
         if vperm >= config['permissions']['bypass_votekick']:
             await ctx.respond("You cannot votekick " + member.mention + " because they have " + LEVEL_ROLE_MAP[vperm].mention, ephemeral=True)
             return
