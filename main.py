@@ -483,7 +483,7 @@ if config['features']['fun']['timeout']['enabled']:
 ### UwU speak
 
 # userid: expiration
-uwuified: dict[int, datetime] = {} # TODO: add to expire_old_vars
+uwuified: dict[int, datetime] = {}
 uwu_dt_race_lock = Lock()
 
 if config['features']['fun']['uwu']['enabled']:
@@ -747,10 +747,18 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: d
 @tasks.loop(minutes=30)
 async def expire_old_vars():
     now = datetime.now()
+    # VCM
     expired_c = [k for k, v in voice_capability_map.items() if v[2] < now]
-    for key in expired_c:
-        voice_capability_map.pop(key, None)
-    logger.debug("Cleaned %s expired vcms", str(len(expired_c)))
+    if expired_c:
+        for key in expired_c:
+            voice_capability_map.pop(key, None)
+        logger.debug("Cleaned %s expired vcms", str(len(expired_c)))
+    # UwUified
+    expired_c = [k for k, v in uwuified.items() if v < now]
+    if expired_c:
+        for key in expired_c:
+            uwuified.pop(key, None)
+        logger.debug("Cleaned %s expired uwuifies", str(len(expired_c)))
 
 expire_old_vars.start()
 
