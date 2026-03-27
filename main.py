@@ -391,6 +391,7 @@ if config['features']['kick']['votekick']['enabled']:
     @commands.cooldown(config['features']['kick']['votekick']['times'], config['features']['kick']['votekick']['cooldown'], commands.BucketType.user)
     async def votekick_cmd(ctx: discord.ApplicationContext, member: discord.Member):
         # TODO: Delete the channel if they leave
+        # TODO: Make sure there can only be one vote per user
         await ctx.defer(ephemeral=True)
         # Make sure they are in the server
         if not isinstance(member, discord.Member):
@@ -423,6 +424,34 @@ if config['features']['kick']['votekick']['enabled']:
         await ctx.respond(f"Go to {c.mention}", ephemeral=True)
         await admin_log(discord.Embed(color=discord.Color.blue(), title="Votekick started", description=f"{ctx.user.mention} started a votekick for {member.mention}"))
 
+### Forcekick
+
+if config['features']['kick']['forcekick']['enabled']:
+    @bot.user_command(name="kick")
+    @requireperm(config['permissions']['allow_forcekick'])
+    @commands.cooldown(config['features']['kick']['forcekick']['times'], config['features']['kick']['forcekick']['cooldown'], commands.BucketType.user)
+    async def forcekick_cmd(ctx: discord.ApplicationContext, member: discord.Member):
+        # TODO: Delete the channel if they leave
+        await ctx.defer(ephemeral=True)
+        # Make sure they are in the server
+        if not isinstance(member, discord.Member):
+            await ctx.respond(member.mention + " is not in this server")
+        vperm = await get_user_perm_level(member)
+        # Make sure they can be kicked
+        if ctx.user.id == member.id:
+            await ctx.respond("You cannot kick yourself", ephemeral=True)
+            return
+        if vperm >= config['permissions']['bypass_forcekick']:
+            await ctx.respond("You cannot kick " + member.mention + " because they have " + LEVEL_ROLE_MAP[vperm].mention, ephemeral=True)
+            return
+        if vperm < 0:
+            await ctx.respond("You cannot kick " + member.mention, ephemeral=True)
+            return
+        # Kick them
+        await member.kick(reason=f"Forcekicked by {ctx.user.name} ({ctx.user.id})")
+        await ctx.respond(f"{member.mention} was kicked", ephemeral=True)
+        await admin_log(discord.Embed(color=discord.Color.red(), title="Member was forcekicked", description=f"{ctx.user.mention} forcekicked {member.mention}"))
+
 ## Promotion (guest > plus)
 
 if config['features']['plusvote']['enabled']:
@@ -431,6 +460,7 @@ if config['features']['plusvote']['enabled']:
     @commands.cooldown(config['features']['plusvote']['times'], config['features']['plusvote']['cooldown'], commands.BucketType.user)
     async def promote_user_cmd(ctx: discord.ApplicationContext, member: discord.Member):
         # TODO: Delete the channel if they leave
+        # TODO: Make sure there can only be one vote per user
         await ctx.defer(ephemeral=True)
         # Make sure they are in the server
         if not isinstance(member, discord.Member):

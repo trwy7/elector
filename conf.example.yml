@@ -147,7 +147,7 @@ features:
 
 permissions:
   # DUE TO DISCORD LIMITATIONS THIS WILL NOT HIDE COMMANDS IN THE UI
-  # To hide commands for roles, go to server settings > integrations > [bot name] > then change the permissions for whatever command you want
+  # To hide commands in the UI: From your server owner account, go to server settings > integrations > [bot name] > then change the permissions for whatever command you want
   # Valid options are:
   # leader - 4
   # vice - 3
@@ -165,13 +165,13 @@ permissions:
   # Bypass getting kicked by vote
   bypass_votekick: 2
   # Allow people to kick other people, no vote required
-  allow_forcekick: 3 # TODO: implement
+  allow_forcekick: 3
   # Bypass getting forcekicked
-  bypass_forcekick: 3 # TODO: implement
+  bypass_forcekick: 3
   # Allow people to start promotion votes
-  allow_promote_start: 3 # TODO: implement
+  allow_promote_start: 3
   # Allow people to vote in promotion votes (guest to plus)
-  allow_promote_vote: 2 # TODO: implement
+  allow_promote_vote: 2
   # Allow people to use the timeout command
   allow_timeout: 2
   # Allow people to use the uwuify command
