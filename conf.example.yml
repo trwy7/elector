@@ -131,13 +131,13 @@ features:
       # This modifies their messages, e.g. Hello -> Hewwo
       enabled: true # TODO: implement
       # How many times a person can uwuify someone
-      times: 1 # TODO: implement
+      times: 1
       # How often their rate limit gets refreshed, in seconds
-      cooldown: 1800 # TODO: implement
+      cooldown: 1800
       # How long the uwuify lasts, in seconds
-      duration: 30 # TODO: implement
+      duration: 30
       # How long the uwuify lasts if a leader initiated it
-      leader_duration: 60 # TODO: implement
+      leader_duration: 60
     autoreply: # If you want no autoreply, delete below and replace with []
       - match: "ping" # this is regex
         send: "pong" # what to reply with

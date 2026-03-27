@@ -470,7 +470,7 @@ if config['features']['fun']['timeout']['enabled']:
     @requireperm(config['permissions']['allow_timeout'])
     @commands.cooldown(config['features']['fun']['timeout']['times'], config['features']['fun']['timeout']['cooldown'], commands.BucketType.user)
     async def timeout_cmd(ctx: discord.ApplicationContext, member: discord.Member):
-        perm = await get_user_perm_level(ctx.user) # type: ignore
+        perm = await get_user_perm_level(ctx.user)
         await ctx.defer()
         # Get the duration the timeout should last
         dur = config['features']['fun']['timeout']['leader_duration'] if perm == 4 else config['features']['fun']['timeout']['duration']
@@ -479,6 +479,30 @@ if config['features']['fun']['timeout']['enabled']:
         # Log it
         logger.info("'%s' timed out '%s' for %s seconds", ctx.user.name, member.name, str(dur))
         await ctx.followup.send(f"{member.mention} has been timed out for {str(dur)} seconds.")
+
+### UwU speak
+
+# userid: expiration
+uwuified: dict[int, datetime] = {} # TODO: add to expire_old_vars
+uwu_dt_race_lock = Lock()
+
+if config['features']['fun']['uwu']['enabled']:
+    @bot.user_command(name="uwuify")
+    @requireperm(config['permissions']['allow_uwuify'])
+    @commands.cooldown(config['features']['fun']['uwu']['times'], config['features']['fun']['uwu']['cooldown'], commands.BucketType.user)
+    async def uwuify_cmd(ctx: discord.ApplicationContext, member: discord.Member):
+        await ctx.defer()
+        perm = await get_user_perm_level(ctx.user)
+        dur = config['features']['fun']['uwu']['leader_duration'] if perm == 4 else config['features']['fun']['uwu']['duration']
+        with uwu_dt_race_lock:
+            uwu_end = uwuified.get(member.id, None)
+            if uwu_end and uwu_end > datetime.now():
+                # extra second for lag
+                uwuified[member.id] += timedelta(seconds=dur + 1)
+                await ctx.respond(f"{member.mention} has been uwuified for an extra {str(dur)} seconds")
+            else:
+                uwuified[member.id] = datetime.now() + timedelta(seconds=dur)
+                await ctx.respond(f"{member.mention} has been uwuified for {str(dur)} seconds")
 
 # Events
 
@@ -660,7 +684,7 @@ arlist: list[tuple[re.Pattern, str, bool]] = [
 
 @bot.event
 async def on_message(message: discord.Message):
-    logger.debug("New message from '%s'", message.author.name)
+    logger.debug("New message from '%s' in %s", message.author.name, message.channel.name)
     if message.author.bot:
         return
     # Autoreply
@@ -676,6 +700,28 @@ async def on_message(message: discord.Message):
             # If set to delete the message, delete it
             if ar[2]:
                 await message.delete(reason="Autoreply")
+                return # the message doesnt exist anymore, we should not continue
+    # UWUified
+    # If more types of channels support webhooks, make an issue
+    if message.author.id in uwuified and (isinstance(message.channel, (discord.TextChannel, discord.VoiceChannel))):
+        uwuify_end = uwuified[message.author.id]
+        if uwuify_end > datetime.now():
+            # They have been uwuified
+            # Check for a webhook
+            hooks = await message.channel.webhooks()
+            uwu_hook = None
+            for hook in hooks:
+                if hook.name == "uwu" and hook.token:
+                    uwu_hook = hook
+                    break
+            if not uwu_hook:
+                uwu_hook = await message.channel.create_webhook(name="uwu", reason="UwUify used and no webhook available")
+            await uwu_hook.send(content=uwulib.uwuify(message.content), username=message.author.display_name, avatar_url=message.author.avatar.url)
+            await message.delete(reason="UwUified")
+            return # the message doesnt exist anymore, we should not continue
+        else:
+            # Time is up, remove them from the dict
+            uwuified.pop(message.author.id)
 
 # Errors
 
@@ -698,14 +744,14 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: d
 # Background
 
 @tasks.loop(minutes=30)
-async def remove_old_vcms():
+async def expire_old_vars():
     now = datetime.now()
     expired_c = [k for k, v in voice_capability_map.items() if v[2] < now]
     for key in expired_c:
         voice_capability_map.pop(key, None)
     logger.debug("Cleaned %s expired vcms", str(len(expired_c)))
 
-remove_old_vcms.start()
+expire_old_vars.start()
 
 # Let's run!
 
