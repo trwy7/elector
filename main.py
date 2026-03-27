@@ -34,15 +34,15 @@ def load_config():
     with open("conf.example.yml", "r", encoding="UTF-8") as dc:
         default_config = yaml.safe_load(dc)
 
-    if os.path.exists("data/config.yml"): # begone, windows developers
-        with open("data/config.yml", "r", encoding="UTF-8") as c:
+    if os.path.exists(os.path.join("data", "config.yml")):
+        with open(os.path.join("data", "config.yml"), "r", encoding="UTF-8") as c:
             tconf = yaml.safe_load(c)
             validate_conf(source=tconf, against=default_config)
             return tconf
     else:
         if not os.path.isdir("data"):
             os.mkdir("data")
-        shutil.copyfile("conf.example.yml", "data/config.yml")
+        shutil.copyfile("conf.example.yml", os.path.join("data", "config.yml"))
         print("Default config has been created")
         sys.exit(1)
 
