@@ -478,10 +478,18 @@ if config['features']['plusvote']['enabled']:
         if not isinstance(member, discord.Member):
             await ctx.respond(member.mention + " is not in this server")
             return
-        vperm = await get_user_perm_level(member)
+        # Prevent self-promote
         if ctx.user.id == member.id:
             await ctx.respond("You cannot promote yourself", ephemeral=True)
             return
+        # Make sure there is not already a vote
+        nc: discord.CategoryChannel = bot.get_channel(VOTE_CATEGORY.id) # prevents cache issues
+        for vc in nc.channels:
+            if vc.name.startswith("promote-") and str(member.id) in vc.topic:
+                await ctx.respond("There is already a promotion vote going on in " + vc.mention, ephemeral=True)
+                return
+        # Make sure they can be promoted
+        vperm = await get_user_perm_level(member)
         if vperm >= 1:
             await ctx.respond(member.mention + " already has extra permissions", ephemeral=True)
             return
