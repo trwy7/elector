@@ -42,6 +42,8 @@ features:
     # Let people overthrow the leader
     # Set the number of votes needed
     overthrow: 6 # TODO: implement
+    # When the leader is overthrown, should they be kicked from the server?
+    overthrow_kick: false # TODO: implement
     # Let the leader pick a vice leader after they are elected
     vice-leader: true # TODO: implement
     # Force a vice leader to be picked
