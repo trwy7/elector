@@ -73,6 +73,9 @@ LEVEL_ROLE_MAP: dict[int, discord.Role] = {}
 
 # (user id, voicechannel id): (muted, deafaned)
 voice_capability_map: dict[tuple[int, int], tuple[bool, bool]] = {}
+# If the person joined when the bot is online, save their join time
+# userid: datetime
+join_dt: dict[int, datetime] = {}
 
 # Bot setup
 
@@ -605,6 +608,8 @@ if config['features']['modify']['rename_roles']:
 @bot.event
 async def on_member_join(member: discord.Member):
     logger.info("'%s' just joined the server", member.name)
+    # Log their join time
+    join_dt[member.id] = datetime.now()
     # Give them guest
     if not member.bot:
         await member.add_roles(GUEST_ROLE, reason="New member")
