@@ -400,7 +400,7 @@ if config['features']['kick']['votekick']['enabled']:
             await ctx.respond("You cannot kick yourself", ephemeral=True)
             return
         if vperm >= config['permissions']['bypass_votekick']:
-            await ctx.respond("You cannot votekick " + member.mention, ephemeral=True)
+            await ctx.respond("You cannot votekick " + member.mention + " because they have " + LEVEL_ROLE_MAP[vperm].mention, ephemeral=True)
             return
         if vperm < 0:
             await ctx.respond("You cannot kick " + member.mention, ephemeral=True)
