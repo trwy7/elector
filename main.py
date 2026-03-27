@@ -496,12 +496,14 @@ if config['features']['plusvote']['enabled']:
                 return
         # Make sure they can be promoted
         vperm = await get_user_perm_level(member)
-        if vperm >= 1:
+        if vperm > 0:
             await ctx.respond(member.mention + " already has extra permissions", ephemeral=True)
             return
         if vperm < 0:
             await ctx.respond("You cannot promote " + member.mention, ephemeral=True)
             return
+        if member.id in join_dt and (join_dt[member.id] + timedelta(hours=config['features']['plusvote']['required_wait'])) > datetime.now():
+            await ctx.respond(f"{member.mention} needs to be in the server for at least {str(config['features']['plusvote']['required_wait'])} hours before you can promote them")
         # Set vote permissions
         perms = set_vote_channel_perms(ctx.user, member, config['permissions']['allow_promote_vote'])
         # Create the channel
@@ -641,7 +643,6 @@ async def on_member_join(member: discord.Member):
 @bot.event
 async def on_raw_member_remove(payload: discord.RawMemberRemoveEvent):
     logger.info("'%s' just left the server", payload.user.name)
-
 
 @bot.event
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):

@@ -88,7 +88,7 @@ features:
     required_votes: 5
     # Required amount of time in the server to be eligible, in hours
     # If the bot restarts while the person is in the waiting period, they will be automatically granted eligibility
-    required_wait: 48 # TODO: implement
+    required_wait: 48
     # How many times a person can start a promotion vote
     times: 2
     # How often their rate limit gets refreshed, in seconds
