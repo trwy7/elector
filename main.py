@@ -119,6 +119,10 @@ async def on_ready():
         logger.info("Deleting old channel: %s", dc.name)
         await dc.delete(reason="Deleting voice rooms on bot start")
 
+    for pv in VOTE_CATEGORY.channels:
+        if pv.topic and pv.topic.startswith("!"):
+            await pv.delete(reason="Deleting stale vote channels on bot start")
+
     await bot.sync_commands()
     init_complete = True
 
