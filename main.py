@@ -548,12 +548,13 @@ remove_old_vcms.start()
 
 @bot.event
 async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
-    logger.debug("'%s' just reacted to a message with '%s'", payload.member.name, payload.emoji.name)
+    logger.debug("'%s' reacted to a message with '%s'", payload.member.name, payload.emoji.name)
     if payload.user_id == bot.user.id:
         return
     channel = bot.get_channel(payload.channel_id)
     message = await channel.fetch_message(payload.message_id) # reminder: bot.get_message uses the cache, we cannot use the cache here
     # warning: whole lotta nesting ahead
+    # I tried commenting as much as possible, idk if it actually helps readability
     if message.channel.category_id == VOTE_CATEGORY.id and message.author.bot:
         logger.debug("A message was reacted in the vote category")
         match message.channel.name.split("-")[0]:
