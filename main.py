@@ -8,7 +8,7 @@ from datetime import timedelta, datetime
 from threading import Lock
 import yaml
 import discord
-from discord.ext import commands # i dislike commands.cooldown, but i don't know any other simple way to do rate limits
+from discord.ext import commands, tasks # i dislike commands.cooldown, but i don't know any other simple way to do rate limits
 from uwuipy import Uwuipy
 
 # Logging
@@ -68,6 +68,9 @@ PLUS_ROLE: discord.Role = None # type: ignore
 GUEST_ROLE: discord.Role = None # type: ignore
 
 LEVEL_ROLE_MAP: dict[int, discord.Role] = {}
+
+# (user id, voicechannel id): (muted, deafaned)
+voice_capability_map: dict[tuple[int, int], tuple[bool, bool]] = {}
 
 # Bot setup
 
@@ -490,7 +493,7 @@ async def on_member_join(member: discord.Member):
     await admin_log(discord.Embed(color=discord.Color.orange(), title="New member", description=f"{member.mention} joined", fields=[discord.EmbedField("Is VIP", "Yes" if member.id in config['vips'] else "No")], timestamp=datetime.now()))
 
 @bot.event
-async def on_voice_state_update(member: discord.Member, before, after):
+async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
     # Check if someone left a room, and it is now empty
     if config['features']['voice_rooms']['enabled'] and \
         before.channel and before.channel != after.channel \
@@ -501,6 +504,32 @@ async def on_voice_state_update(member: discord.Member, before, after):
             del vc_owners[before.channel.id]
         await before.channel.delete(reason="The room is now empty")
         logger.info("Deleted stale voice channel")
+    # Save their current voice state
+    if before.channel and before.channel == after.channel:
+        logger.debug("Saving voice perms for %s", member.name)
+        voice_capability_map[(member.id, after.channel.id)] = (after.mute, after.deaf, datetime.now() + timedelta(minutes=5)) # TODO: add to config
+    # Restore that state, this might be buggy
+    # TODO: add a Lock to this for race conditions
+    if after.channel and before.channel != after.channel:
+        if (member.id, after.channel.id) in voice_capability_map and voice_capability_map[(member.id, after.channel.id)][2] > datetime.now():
+            logger.debug("Restoring voice perms for %s", member.name)
+            vcm = voice_capability_map[(member.id, after.channel.id)]
+            await member.edit(mute=vcm[0], deafen=vcm[1], reason="Restoring voice perms for channel")
+        else:
+            dmute = not after.channel.permissions_for(member).speak
+            logger.debug("Clearing voice perms for %s, dmute is %s", member.name, str(dmute))
+            await member.edit(mute=dmute, deafen=False, reason="Clearing voice perms for channel")
+            voice_capability_map[(member.id, after.channel.id)] = (dmute, False, datetime.now() + timedelta(minutes=30))
+
+@tasks.loop(minutes=30)
+async def remove_old_vcms():
+    now = datetime.now()
+    expired_c = [k for k, v in voice_capability_map.items() if v[2] < now]
+    for key in expired_c:
+        voice_capability_map.pop(key, None)
+    logger.debug("Cleaned %s expired vcms", str(len(expired_c)))
+
+remove_old_vcms.start()
 
 @bot.event
 async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
