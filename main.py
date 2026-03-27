@@ -721,9 +721,8 @@ async def on_message(message: discord.Message):
             await uwu_hook.send(content=uwulib.uwuify(message.content), username=message.author.display_name, avatar_url=message.author.avatar.url)
             await message.delete(reason="UwUified")
             return # the message doesnt exist anymore, we should not continue
-        else:
-            # Time is up, remove them from the dict
-            uwuified.pop(message.author.id)
+        # Time is up, remove them from the dict
+        uwuified.pop(message.author.id)
 
 # Errors
 
