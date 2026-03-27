@@ -174,6 +174,24 @@ async def public_log(embed: discord.Embed):
 async def admin_log(embed: discord.Embed):
     await LOG_CHANNEL.send(embed=embed)
 
+def set_vote_channel_perms(by, to, privacy):
+    perms = {
+        SERVER.default_role: discord.PermissionOverwrite(view_channel=False, add_reactions=False),
+        to: discord.PermissionOverwrite(view_channel=False),
+        by: discord.PermissionOverwrite(view_channel=True)
+    }
+    if privacy == 0:
+        perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True)
+    if privacy <= 1:
+        perms[PLUS_ROLE] = discord.PermissionOverwrite(view_channel=True)
+    if privacy <= 2:
+        perms[VIP_ROLE] = discord.PermissionOverwrite(view_channel=True)
+    if privacy <= 3:
+        perms[VICE_ROLE] = discord.PermissionOverwrite(view_channel=True)
+    if privacy <= 4:
+        perms[LEADER_ROLE] = discord.PermissionOverwrite(view_channel=True)
+    return perms
+
 ## Decorators
 
 def requireperm(level: int):
@@ -384,29 +402,52 @@ if config['features']['kick']['votekick']['enabled']:
             await ctx.respond("You cannot kick " + member.mention, ephemeral=True)
             return
         # Set vote permissions
-        perms = {
-            SERVER.default_role: discord.PermissionOverwrite(view_channel=False, add_reactions=False),
-            member: discord.PermissionOverwrite(view_channel=False),
-            ctx.user: discord.PermissionOverwrite(view_channel=True)
-        }
-        priv = config['permissions']['allow_kick_vote']
-        if priv == 0:
-            perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True)
-        if priv <= 1:
-            perms[PLUS_ROLE] = discord.PermissionOverwrite(view_channel=True)
-        if priv <= 2:
-            perms[VIP_ROLE] = discord.PermissionOverwrite(view_channel=True)
-        if priv <= 3:
-            perms[VICE_ROLE] = discord.PermissionOverwrite(view_channel=True)
-        if priv <= 4:
-            perms[LEADER_ROLE] = discord.PermissionOverwrite(view_channel=True)
+        perms = set_vote_channel_perms(ctx.user, member, config['permissions']['allow_kick_vote'])
         # Create the channel
         c = await VOTE_CATEGORY.create_text_channel("kick-" + member.name, reason="Votekick started", topic="Vote to kick " + member.mention, overwrites=perms)
         # Send the message
         m = await c.send(embed=discord.Embed(
             color=discord.Color.blurple(),
             title="Votekick",
-            description=f"{ctx.user.mention} wants to kick {member.mention}. {str(config['features']['kick']['votekick']['required_votes'])} reaction{' is' if config['features']['kick']['votekick']['required_votes'] == 1 else "s are"} required."
+            description=f"{ctx.user.mention} wants to kick {member.mention}. {str(config['features']['kick']['votekick']['required_votes'] + 1)} reactions are required."
+        ))
+        # Add tallys
+        await m.add_reaction("✅")
+        await m.add_reaction("❌")
+        # Send a link to the channel
+        await ctx.respond(f"Go to {c.mention}", ephemeral=True)
+
+## Promotion (guest > plus)
+
+if config['features']['plusvote']['enabled']:
+    @bot.user_command(name="promote")
+    @requireperm(config['permissions']['allow_promote_start'])
+    @commands.cooldown(config['features']['plusvote']['times'], config['features']['plusvote']['cooldown'], commands.BucketType.user)
+    async def promote_user_cmd(ctx: discord.ApplicationContext, member: discord.Member):
+        # TODO: Delete the channel if they leave
+        await ctx.defer(ephemeral=True)
+        # Make sure they are in the server
+        if not isinstance(member, discord.Member):
+            await ctx.respond(member.mention + " is not in this server")
+        vperm = await get_user_perm_level(member)
+        if ctx.user.id == member.id:
+            await ctx.respond("You cannot promote yourself", ephemeral=True)
+            return
+        if vperm >= 1:
+            await ctx.respond(member.mention + " already has extra permissions", ephemeral=True)
+            return
+        if vperm < 0:
+            await ctx.respond("You cannot promote " + member.mention, ephemeral=True)
+            return
+        # Set vote permissions
+        perms = set_vote_channel_perms(ctx.user, member, config['permissions']['allow_promote_vote'])
+        # Create the channel
+        c = await VOTE_CATEGORY.create_text_channel("promote-" + member.name, reason="Promotion started", topic="Vote to promote " + member.mention, overwrites=perms)
+        # Send the message
+        m = await c.send(embed=discord.Embed(
+            color=discord.Color.blue(),
+            title="Promotion",
+            description=f"{ctx.user.mention} wants to promote {member.mention} to {PLUS_ROLE.mention}. {str(config['features']['plusvote']['required_votes'] + 1)} reactions are required."
         ))
         # Add tallys
         await m.add_reaction("✅")
@@ -464,6 +505,8 @@ async def on_voice_state_update(member: discord.Member, before, after):
 @bot.event
 async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     logger.debug("'%s' just reacted to a message with '%s'", payload.member.name, payload.emoji.name)
+    if payload.user_id == bot.user.id:
+        return
     channel = bot.get_channel(payload.channel_id)
     message = await channel.fetch_message(payload.message_id) # reminder: bot.get_message uses the cache, we cannot use the cache here
     # warning: whole lotta nesting ahead
@@ -518,6 +561,57 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                             await message.channel.send("The vote failed")
                             await message.clear_reactions()
                             await admin_log(discord.Embed(color=discord.Color.yellow(), title="Votekick failed with error", description="The votekick failed and the user was not found"))
+                            await asyncio.sleep(60)
+                            await message.channel.delete(reason="Vote failed and member was not found.")
+            case "promote":
+                # Copied from Votekick
+                logger.debug("A message was reacted in a promotion channel")
+                reaction = next((r for r in message.reactions if str(r.emoji) == str(payload.emoji)), None)
+                # yes i know this is not >=, the bot adds one extra "vote" because of reaction limitations
+                if reaction and reaction.count > config['features']['plusvote']['required_votes']:
+                    # Get everyone who was for promotion, exclude bots
+                    approved = [u for u in await reaction.users().flatten() if not u.bot]
+                    if payload.emoji.name == "✅":
+                        # Get all opposed, exclude bots
+                        opposed = [u for u in await next((r for r in message.reactions if str(r.emoji) == "❌"), None).users().flatten() if not u.bot]
+                        # Get the person
+                        member = SERVER.get_member(int(message.channel.topic.split("<@")[-1].removesuffix(">")))
+                        if member:
+                            # Great! They are still in the server, promote them.
+                            await member.add_roles(PLUS_ROLE, reason=f"Votekick passed! ({len(approved)}-{len(opposed)})")
+                            await message.clear_reactions()
+                            # log it
+                            await admin_log(discord.Embed(color=discord.Color.green(), title="Promotion passed!", description=f"{member.mention} was given {PLUS_ROLE.mention}.", fields=[discord.EmbedField("Yay", str(len(approved)) + " people voted for a promotion\n" + (", ".join([vmember.mention for vmember in approved]))), discord.EmbedField("Nay", str(len(opposed)) + " people voted against a promotion\n" + (", ".join([vmember.mention for vmember in opposed])))]))
+                            await message.channel.send(f"{member.mention} was promoted to {PLUS_ROLE.name}! The results were {len(approved)}-{len(opposed)}")
+                            # i dislike how this mentions everyone with the role, but considering this name can change, it's better to let discord show the role name
+                            await ANNOUNCE_CHANNEL.send(f"{member.mention} was promoted to {PLUS_ROLE.mention} by a {len(approved)}-{len(opposed)} vote.")
+                            await asyncio.sleep(60)
+                            await message.channel.delete(reason="Vote passed!")
+                        else:
+                            # race condition (probably)
+                            await message.channel.send("Could not find <@" + message.channel.topic.split("<@")[-1])
+                            await message.clear_reactions()
+                            await admin_log(discord.Embed(color=discord.Color.yellow(), title="Promotion passed with error", description="The promotion passed, but the user was not found"))
+                            await asyncio.sleep(60)
+                            await message.channel.delete(reason="Vote passed and member was not found.")
+                    elif payload.emoji.name == "❌":
+                        # Get all opposed, exclude bots
+                        opposed = [u for u in await next((r for r in message.reactions if str(r.emoji) == "✅"), None).users().flatten() if not u.bot]
+                        # Get the person
+                        member = SERVER.get_member(int(message.channel.topic.split("<@")[-1].removesuffix(">")))
+                        if member:
+                            # Send confirmation
+                            await message.channel.send(f"The vote failed. The results were {len(approved)}-{len(opposed)}")
+                            await message.clear_reactions()
+                            # log it
+                            await admin_log(discord.Embed(color=discord.Color.red(), title="Promotion failed", description=f"{member.mention} was not promoted. The results were {len(approved)}-{len(opposed)}", fields=[discord.EmbedField("Yay", str(len(opposed)) + " people voted for a promotion\n" + (", ".join([vmember.mention for vmember in opposed]))), discord.EmbedField("Nay", str(len(approved)) + " people voted against a promotion\n" + (", ".join([vmember.mention for vmember in approved])))]))
+                            await asyncio.sleep(60)
+                            await message.channel.delete(reason="Vote failed")
+                        else:
+                            # race condition (probably)
+                            await message.channel.send("The vote failed")
+                            await message.clear_reactions()
+                            await admin_log(discord.Embed(color=discord.Color.yellow(), title="Promotion failed with error", description="The promotion failed and the user was not found"))
                             await asyncio.sleep(60)
                             await message.channel.delete(reason="Vote failed and member was not found.")
 

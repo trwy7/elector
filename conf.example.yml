@@ -80,13 +80,17 @@ features:
     rename_roles: false # TODO: implement
   plusvote:
     # Allow people to be voted into the plus role
-    # Always disabled during leader votes
-    enabled: true # TODO: implement
+    # Always disabled during leader votes # TODO: implement
+    enabled: true
     # Required amount of votes
-    required_votes: 5 # TODO: implement
+    required_votes: 5
     # Required amount of time in the server to be eligible, in hours
     # If the bot restarts while the person is in the waiting period, they will be automatically granted eligibility
     required_wait: 48 # TODO: implement
+    # How many times a person can start a promotion vote
+    times: 2
+    # How often their rate limit gets refreshed, in seconds
+    cooldown: 86400
   voice_rooms:
     # Let people make their own voice channels that they manage, they are deleted after everyone leaves
     enabled: true
