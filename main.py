@@ -504,6 +504,7 @@ if config['features']['plusvote']['enabled']:
             return
         if member.id in join_dt and (join_dt[member.id] + timedelta(hours=config['features']['plusvote']['required_wait'])) > datetime.now():
             await ctx.respond(f"{member.mention} needs to be in the server for at least {str(config['features']['plusvote']['required_wait'])} hours before you can promote them")
+            return
         # Set vote permissions
         perms = set_vote_channel_perms(ctx.user, member, config['permissions']['allow_promote_vote'])
         # Create the channel
