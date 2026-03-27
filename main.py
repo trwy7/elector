@@ -17,16 +17,16 @@ logger = logging.getLogger("elector")
 logger.level = logging.DEBUG
 
 # App config
-def validate_conf(source: dict, against: dict):
+def validate_conf(source: dict, against: dict, path: str="/"):
     for reqk, reqv in against.items():
         if reqk in source:
             if type(reqv) == type(source[reqk]): # pylint: disable=unidiomatic-typecheck # i dont want to include subclasses
                 if isinstance(reqv, dict):
-                    validate_conf(source[reqk], reqv)
+                    validate_conf(source[reqk], reqv, path + reqk + "/")
             else:
-                raise ValueError(f"{reqk} exists in your config, but is not the same type as the example file")
+                raise ValueError(f"\u001b[31m{path}{reqk} exists in your config, but is not the same type as the example file\u001b[0m")
         else:
-            raise ValueError(f"{reqk} is not in your config, copy it from the example file")
+            raise ValueError(f"\u001b[31m{path}{reqk} is not in your config, copy it from conf.example.yml at https://raw.githubusercontent.com/trwy7/elector/refs/heads/main/conf.example.yml\u001b[0m")
 
 def load_config():
     with open("conf.example.yml", "r", encoding="UTF-8") as dc:
