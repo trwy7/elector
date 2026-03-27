@@ -488,7 +488,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                             await member.kick(reason=f"Votekick passed! ({len(approved)}-{len(opposed)})")
                             await message.clear_reactions()
                             # log it
-                            await admin_log(discord.Embed(color=discord.Color.green(), title="Votekick passed!", description=f"{member.mention} was kicked. The results were {len(approved)}-{len(opposed)}", fields=[discord.EmbedField("For", "\n".join([vmember.mention for vmember in approved])), discord.EmbedField("Against", "\n".join([vmember.mention for vmember in opposed]))]))
+                            await admin_log(discord.Embed(color=discord.Color.green(), title="Votekick passed!", description=f"{member.mention} was kicked.", fields=[discord.EmbedField("Yay", str(len(approved)) + " people voted for a kick\n" + (", ".join([vmember.mention for vmember in approved]))), discord.EmbedField("Nay", str(len(opposed)) + " people voted against a kick\n" + (", ".join([vmember.mention for vmember in opposed])))]))
                             await message.channel.send(f"{member.mention} was kicked! The results were {len(approved)}-{len(opposed)}")
                             await ANNOUNCE_CHANNEL.send(f"{member.mention} was kicked by a {len(approved)}-{len(opposed)} vote.")
                             await asyncio.sleep(60)
@@ -510,7 +510,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                             await message.channel.send(f"The vote failed. The results were {len(approved)}-{len(opposed)}")
                             await message.clear_reactions()
                             # log it
-                            await admin_log(discord.Embed(color=discord.Color.red(), title="Votekick failed", description=f"{member.mention} was not kicked. The results were {len(approved)}-{len(opposed)}", fields=[discord.EmbedField("For", "\n".join([vmember.mention for vmember in opposed])), discord.EmbedField("Against", "\n".join([vmember.mention for vmember in approved]))]))
+                            await admin_log(discord.Embed(color=discord.Color.red(), title="Votekick failed", description=f"{member.mention} was not kicked. The results were {len(approved)}-{len(opposed)}", fields=[discord.EmbedField("Yay", str(len(opposed)) + " people voted for a kick\n" + (", ".join([vmember.mention for vmember in opposed]))), discord.EmbedField("Nay", str(len(approved)) + " people voted against a kick\n" + (", ".join([vmember.mention for vmember in approved])))]))
                             await asyncio.sleep(60)
                             await message.channel.delete(reason="Vote failed")
                         else:
