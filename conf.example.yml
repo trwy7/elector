@@ -105,13 +105,13 @@ features:
     allow_perm_change: false
   announce_main_call:
     # Send an announcement when someone joins the main voice channel, and is the only person in it. This pings @everyone
-    on_first_join: true # TODO: implement
+    on_first_join: true
     # Send a message when someone joins the main voice channel
-    on_join: false # TODO: implement
+    on_join: false
     # Send an announcement when everyone has left the main voice channel
-    on_last_leave: false # TODO: implement
+    on_last_leave: false
     # Send a message when someone has left the main voice channel
-    on_leave: false # TODO: implement
+    on_leave: false
   # The bot automatically saves server mute/deafen status per channel
   # After 5 minutes of inactivity, the bot will reset them to unmuted (Provided the user is not supressed by permissions) and undeafened
   # Change the number below to choose how long this cache lasts (in minutes)
