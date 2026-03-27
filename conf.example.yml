@@ -110,6 +110,10 @@ features:
     on_last_leave: false # TODO: implement
     # Send a message when someone has left the main voice channel
     on_leave: false # TODO: implement
+  # The bot automatically saves server mute/deafen status per channel
+  # After 5 minutes of inactivity, the bot will reset them to unmuted (Provided the user is not supressed by permissions) and undeafened
+  # Change the number below to choose how long this cache lasts (in minutes)
+  voice_state_cache_duration: 5
   fun:
     timeout:
       # Let people time eachother out

@@ -507,7 +507,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
     # Save their current voice state
     if before.channel and before.channel == after.channel:
         logger.debug("Saving voice perms for %s", member.name)
-        voice_capability_map[(member.id, after.channel.id)] = (after.mute, after.deaf, datetime.now() + timedelta(minutes=5)) # TODO: add to config
+        voice_capability_map[(member.id, after.channel.id)] = (after.mute, after.deaf, datetime.now() + timedelta(minutes=config['features']['voice_state_cache_duration']))
     # Restore that state, this might be buggy
     # TODO: add a Lock to this for race conditions
     if after.channel and before.channel != after.channel:
