@@ -551,11 +551,14 @@ if config['features']['modify']['rename_roles']:
                 logger.debug("Found correct role")
                 level = v
                 break
+        ulevel = await get_user_perm_level(ctx.user)
         if not level:
             await ctx.respond("You can only rename these roles:\n- " + "\n- ".join([
-                r.mention for r in LEVEL_ROLE_MAP.values()
+                r.mention for l, r in LEVEL_ROLE_MAP.items() if ulevel >= l
             ]), ephemeral=True)
             return
+        if ulevel < level:
+            await ctx.respond("That role is higher than you")
         oname = role.name
         await role.edit(name=name, reason=f'{ctx.user.name} ({ctx.user.id}) requested a role name change')
         await ANNOUNCE_CHANNEL.send(f"Name of {role.mention} was changed by {ctx.user.mention}: {oname} -> {name}")
