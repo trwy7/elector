@@ -450,6 +450,7 @@ if config['features']['kick']['forcekick']['enabled']:
         # Kick them
         await member.kick(reason=f"Forcekicked by {ctx.user.name} ({ctx.user.id})")
         await ctx.respond(f"{member.mention} was kicked", ephemeral=True)
+        await ANNOUNCE_CHANNEL.send(f"{member.mention} was kicked by {ctx.user.mention}")
         await admin_log(discord.Embed(color=discord.Color.red(), title="Member was forcekicked", description=f"{ctx.user.mention} forcekicked {member.mention}"))
 
 ## Promotion (guest > plus)
