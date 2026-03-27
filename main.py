@@ -394,13 +394,18 @@ if config['features']['kick']['votekick']['enabled']:
     @commands.cooldown(config['features']['kick']['votekick']['times'], config['features']['kick']['votekick']['cooldown'], commands.BucketType.user)
     async def votekick_cmd(ctx: discord.ApplicationContext, member: discord.Member):
         # TODO: Delete the channel if they leave
-        # TODO: Make sure there can only be one vote per user
         await ctx.defer(ephemeral=True)
         # Make sure they are in the server
         if not isinstance(member, discord.Member):
             await ctx.respond(member.mention + " is not in this server")
             return
         vperm = await get_user_perm_level(member)
+        # Make sure there is not already a vote
+        nc: discord.CategoryChannel = bot.get_channel(VOTE_CATEGORY.id) # prevents cache issues
+        for vc in nc.channels:
+            if vc.name.startswith("kick-") and str(member.id) in vc.topic:
+                await ctx.respond("There is already a kick vote going on in " + vc.mention, ephemeral=True)
+                return
         # Make sure they can be kicked
         if ctx.user.id == member.id:
             await ctx.respond("You cannot kick yourself", ephemeral=True)
