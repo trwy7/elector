@@ -382,7 +382,7 @@ if config['features']['kick']['votekick']['enabled']:
             return
         # Set vote permissions
         perms = {
-            SERVER.default_role: discord.PermissionOverwrite(view_channel=False),
+            SERVER.default_role: discord.PermissionOverwrite(view_channel=False, add_reactions=False),
             member: discord.PermissionOverwrite(view_channel=False),
             ctx.user: discord.PermissionOverwrite(view_channel=True)
         }
