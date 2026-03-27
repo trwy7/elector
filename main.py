@@ -420,6 +420,7 @@ if config['features']['kick']['votekick']['enabled']:
         await m.add_reaction("❌")
         # Send a link to the channel
         await ctx.respond(f"Go to {c.mention}", ephemeral=True)
+        await admin_log(discord.Embed(color=discord.Color.blue(), title="Votekick started", description=f"{ctx.user.mention} started a votekick for {member.mention}"))
 
 ## Promotion (guest > plus)
 
@@ -458,6 +459,7 @@ if config['features']['plusvote']['enabled']:
         await m.add_reaction("❌")
         # Send a link to the channel
         await ctx.respond(f"Go to {c.mention}", ephemeral=True)
+        await admin_log(discord.Embed(color=discord.Color.blue(), title="Promote vote started", description=f"{ctx.user.mention} started a promotion for {member.mention}"))
 
 ## Fun
 
