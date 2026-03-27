@@ -5,6 +5,7 @@ import shutil
 import asyncio
 import logging
 import functools
+import typing
 from datetime import timedelta, datetime
 from threading import Lock
 import yaml
@@ -104,7 +105,7 @@ async def on_ready():
     GUEST_ROLE = SERVER.get_role(config['roles']['guest_role']) # type: ignore
 
     LEVEL_ROLE_MAP = {
-        -1: SERVER.default_role,
+        #-1: SERVER.default_role, # uncomment if needed, this breaks the rolerename function
         0: GUEST_ROLE,
         1: PLUS_ROLE,
         2: VIP_ROLE,
@@ -536,6 +537,30 @@ if config['features']['modify']['change_icon']:
         await ctx.guild.edit(icon=await icon.read(), reason=f'{ctx.user.name} ({ctx.user.id}) requested icon change')
         await ANNOUNCE_CHANNEL.send("Server icon changed by " + ctx.user.mention)
         await ctx.respond("Icon changed")
+
+if config['features']['modify']['rename_roles']:
+    @bot.slash_command(name="renamerole", description="Rename a role") # could be named better, only for permissions roles
+    @discord.guild_only()
+    @option("role", description="The role to rename")
+    @option("name", description="The new role name")
+    @requireperm(config['permissions']['allow_perm_rename'])
+    async def srv_role_rename_cmd(ctx: discord.ApplicationContext, role: discord.Role, name: str):
+        logger.info(f"{ctx.user.name} is requesting to rename {role.name} to {name}")
+        level = None
+        for v, r in LEVEL_ROLE_MAP.items():
+            if r.id == role.id:
+                logger.debug("Found correct role")
+                level = v
+                break
+        if not level:
+            await ctx.respond("You can only rename these roles:\n- " + "\n- ".join([
+                r.mention for r in LEVEL_ROLE_MAP.values()
+            ]), ephemeral=True)
+            return
+        oname = role.name
+        await role.edit(name=name, reason=f'{ctx.user.name} ({ctx.user.id}) requested a role name change')
+        await ANNOUNCE_CHANNEL.send(f"Name of {role.mention} was changed by {ctx.user.mention}: {oname} -> {name}")
+        await ctx.respond("Name updated", ephemeral=True)
 
 # Events
 

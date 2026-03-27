@@ -77,7 +77,7 @@ features:
     # Let people change the server icon
     change_icon: true
     # Let people rename permission roles
-    rename_roles: false # TODO: implement
+    rename_roles: false
   plusvote:
     # Allow people to be voted into the plus role
     # Always disabled during leader votes # TODO: implement
@@ -181,4 +181,4 @@ permissions:
   # Who can change the server icon
   allow_icon_change: 4
   # Who can rename permission roles
-  allow_perm_rename: 4 # TODO: implement
+  allow_perm_rename: 4
