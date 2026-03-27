@@ -129,7 +129,7 @@ features:
     uwu:
       # Let people uwuify each other
       # This modifies their messages, e.g. Hello -> Hewwo
-      enabled: true # TODO: implement
+      enabled: true
       # How many times a person can uwuify someone
       times: 1
       # How often their rate limit gets refreshed, in seconds
@@ -157,12 +157,12 @@ permissions:
   # Allow people to vote in leader elections
   allow_leader_vote: 1 # TODO: implement
   # Allow people to start a votekick
-  allow_kick_start: 2 # TODO: implement
+  allow_kick_start: 2
   # Allow people to vote in kick votes
-  allow_kick_vote: 2 # TODO: implement
+  allow_kick_vote: 2
   # Bypass getting kicked by vote
   # TODO: Make sure people have a minimum of 0 to get kicked
-  bypass_votekick: 2 # TODO: implement
+  bypass_votekick:
   # Allow people to kick other people, no vote required
   allow_forcekick: 3 # TODO: implement
   # Bypass getting forcekicked
@@ -174,7 +174,7 @@ permissions:
   # Allow people to use the timeout command
   allow_timeout: 2
   # Allow people to use the uwuify command
-  allow_uwuify: 1 # TODO: implement
+  allow_uwuify: 1
   # Allow people to make voice rooms
   allow_create_room: 0
   # Who can rename the server
