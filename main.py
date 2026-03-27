@@ -684,6 +684,8 @@ arlist: list[tuple[re.Pattern, str, bool]] = [
 
 @bot.event
 async def on_message(message: discord.Message):
+    if isinstance(message.channel, discord.DMChannel):
+        return # guild only!
     logger.debug("New message from '%s' in %s", message.author.name, message.channel.name)
     if message.author.bot:
         return
