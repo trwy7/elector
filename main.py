@@ -512,6 +512,7 @@ if config['features']['modify']['rename']:
     srv_rename_regex = re.compile(config['features']['modify']['rename_regex'])
     # actual command
     @bot.slash_command(name="rename", description="Rename the server")
+    @discord.guild_only()
     @option("name", description="The new server name")
     @requireperm(config['permissions']['allow_server_rename'])
     async def srv_rename_cmd(ctx: discord.ApplicationContext, name: str):
@@ -521,9 +522,20 @@ if config['features']['modify']['rename']:
             await ctx.respond(config['features']['modify']['rename_fail_msg'], ephemeral=True)
             return
         # Change the name
-        await SERVER.edit(name=name, reason=ctx.user.mention + ' requested name change')
+        await SERVER.edit(name=name, reason=f'{ctx.user.name} ({ctx.user.id}) requested name change')
         await ANNOUNCE_CHANNEL.send("Server name changed by " + ctx.user.mention + ": " + name)
         await ctx.respond("Name updated", ephemeral=True)
+
+if config['features']['modify']['change_icon']:
+    @bot.slash_command(name="newicon", description="Change the server icon")
+    @discord.guild_only()
+    @option("name", description="The new server name")
+    @requireperm(config['permissions']['allow_icon_change'])
+    async def srv_change_icon(ctx: discord.ApplicationContext, icon: discord.Attachment):
+        await ctx.defer(ephemeral=True)
+        await ctx.guild.edit(icon=await icon.read(), reason=f'{ctx.user.name} ({ctx.user.id}) requested icon change')
+        await ANNOUNCE_CHANNEL.send("Server icon changed by " + ctx.user.mention)
+        await ctx.respond("Icon changed")
 
 # Events
 
@@ -761,6 +773,10 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: d
             text.append(str(seconds) + " seconds")
         await ctx.respond("This command is currently on cooldown! Please wait " + ' '.join(text), ephemeral=True)
     else:
+        try:
+            await ctx.respond("Command failed: " + type(error).__name__)
+        except:
+            pass
         raise error
 
 # Background
