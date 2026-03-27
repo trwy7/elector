@@ -396,6 +396,7 @@ if config['features']['kick']['votekick']['enabled']:
         # Make sure they are in the server
         if not isinstance(member, discord.Member):
             await ctx.respond(member.mention + " is not in this server")
+            return
         vperm = await get_user_perm_level(member)
         # Make sure they can be kicked
         if ctx.user.id == member.id:
@@ -436,6 +437,7 @@ if config['features']['kick']['forcekick']['enabled']:
         # Make sure they are in the server
         if not isinstance(member, discord.Member):
             await ctx.respond(member.mention + " is not in this server")
+            return
         vperm = await get_user_perm_level(member)
         # Make sure they can be kicked
         if ctx.user.id == member.id:
@@ -466,6 +468,7 @@ if config['features']['plusvote']['enabled']:
         # Make sure they are in the server
         if not isinstance(member, discord.Member):
             await ctx.respond(member.mention + " is not in this server")
+            return
         vperm = await get_user_perm_level(member)
         if ctx.user.id == member.id:
             await ctx.respond("You cannot promote yourself", ephemeral=True)
@@ -832,7 +835,7 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: d
         await ctx.respond("This command is currently on cooldown! Please wait " + ' '.join(text), ephemeral=True)
     else:
         try:
-            await ctx.respond("Command failed: " + type(error).__name__)
+            await ctx.respond("Command failed: " + type(error).__name__, ephemeral=True)
         except:
             pass
         raise error

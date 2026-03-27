@@ -64,11 +64,11 @@ features:
     forcekick:
       # Let people kick others
       # Check permissions for fine control
-      enabled: true # TODO: implement
+      enabled: true
       # How many times a person can forcekick
-      times: 3 # TODO: implement
+      times: 3
       # How often their rate limit gets refreshed, in seconds
-      cooldown: 43200 # TODO: implement
+      cooldown: 43200
   modify:
     # Let people rename the server
     rename: true
