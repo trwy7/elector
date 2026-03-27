@@ -162,7 +162,7 @@ permissions:
   allow_kick_vote: 2
   # Bypass getting kicked by vote
   # TODO: Make sure people have a minimum of 0 to get kicked
-  bypass_votekick:
+  bypass_votekick: 2
   # Allow people to kick other people, no vote required
   allow_forcekick: 3 # TODO: implement
   # Bypass getting forcekicked
