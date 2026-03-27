@@ -40,6 +40,8 @@ def load_config():
             validate_conf(source=tconf, against=default_config)
             return tconf
     else:
+        if not os.path.isdir("data"):
+            os.mkdir("data")
         shutil.copyfile("conf.example.yml", "data/config.yml")
         print("Default config has been created")
         sys.exit(1)
@@ -635,6 +637,11 @@ async def on_member_join(member: discord.Member):
     if member.id in config['vips']:
         await member.add_roles(VIP_ROLE, reason="New VIP member")
     await admin_log(discord.Embed(color=discord.Color.orange(), title="New member", description=f"{member.mention} joined", fields=[discord.EmbedField("Is VIP", "Yes" if member.id in config['vips'] else "No")], timestamp=datetime.now()))
+
+@bot.event
+async def on_raw_member_remove(payload: discord.RawMemberRemoveEvent):
+    logger.info("'%s' just left the server", payload.user.name)
+
 
 @bot.event
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
