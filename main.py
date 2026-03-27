@@ -520,6 +520,21 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             logger.debug("Clearing voice perms for %s, dmute is %s", member.name, str(dmute))
             await member.edit(mute=dmute, deafen=False, reason="Clearing voice perms for channel")
             voice_capability_map[(member.id, after.channel.id)] = (dmute, False, datetime.now() + timedelta(minutes=30))
+    # Announce joins of the main channel
+    if after.channel and after.channel.id == VOICE_CHANNEL.id and before.channel != after.channel:
+        if len(after.channel.members) == 1 and config['features']['announce_main_call']['on_first_join']:
+            await ANNOUNCE_CHANNEL.send(f"{member.mention} started a call in {VOICE_CHANNEL.mention}! @everyone")
+        elif config['features']['announce_main_call']['on_join']:
+            await ANNOUNCE_CHANNEL.send(f"{member.mention} joined {VOICE_CHANNEL.mention}")
+    # Announce leaves of the main channel
+    if before.channel and before.channel.id == VOICE_CHANNEL.id and before.channel != after.channel:
+        if len(before.channel.members) == 0 and config['features']['announce_main_call']['on_last_leave']:
+            if config['features']['announce_main_call']['on_leave']:
+                await ANNOUNCE_CHANNEL.send(f"{member.mention} left and ended the call in {VOICE_CHANNEL.mention}")
+            else:
+                await ANNOUNCE_CHANNEL.send(f"The call in {VOICE_CHANNEL.mention} has ended")
+        elif config['features']['announce_main_call']['on_leave']:
+            await ANNOUNCE_CHANNEL.send(f"{member.mention} left {VOICE_CHANNEL.mention}")
 
 @tasks.loop(minutes=30)
 async def remove_old_vcms():
