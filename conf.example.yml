@@ -69,11 +69,11 @@ features:
       cooldown: 43200 # TODO: implement
   modify:
     # Let people rename the server
-    rename: true # TODO: implement
-    # The server name will be converted to lowercase before matching
-    allowed_rename_regex: ".*" # TODO: implement
+    rename: true
+    # The full server name must match this regex (uses re.fullmatch)
+    rename_regex: ".*"
     # The message to respond with if regex matching fails
-    rename_fail_msg: "Your server name is invalid" # TODO: implement
+    rename_fail_msg: "Your server name is invalid"
     # Let people change the server icon
     change_icon: true # TODO: implement
     # Let people rename permission roles
@@ -161,7 +161,6 @@ permissions:
   # Allow people to vote in kick votes
   allow_kick_vote: 2
   # Bypass getting kicked by vote
-  # TODO: Make sure people have a minimum of 0 to get kicked
   bypass_votekick: 2
   # Allow people to kick other people, no vote required
   allow_forcekick: 3 # TODO: implement
@@ -178,7 +177,7 @@ permissions:
   # Allow people to make voice rooms
   allow_create_room: 0
   # Who can rename the server
-  allow_server_rename: 3 # TODO: implement
+  allow_server_rename: 3
   # Who can change the server icon
   allow_icon_change: 4 # TODO: implement
   # Who can rename permission roles

@@ -9,6 +9,7 @@ from datetime import timedelta, datetime
 from threading import Lock
 import yaml
 import discord
+from discord.commands import option
 from discord.ext import commands, tasks # i dislike commands.cooldown, but i don't know any other simple way to do rate limits
 from uwuipy import Uwuipy
 
@@ -503,6 +504,26 @@ if config['features']['fun']['uwu']['enabled']:
             else:
                 uwuified[member.id] = datetime.now() + timedelta(seconds=dur)
                 await ctx.respond(f"{member.mention} has been uwuified for {str(dur)} seconds")
+
+## Server customization
+
+if config['features']['modify']['rename']:
+    # pre-compile the regex
+    srv_rename_regex = re.compile(config['features']['modify']['rename_regex'])
+    # actual command
+    @bot.slash_command(name="rename", description="Rename the server")
+    @option("name", description="The new server name")
+    @requireperm(config['permissions']['allow_server_rename'])
+    async def srv_rename_cmd(ctx: discord.ApplicationContext, name: str):
+        await ctx.defer(ephemeral=True)
+        # Make sure the name complies
+        if not re.fullmatch(srv_rename_regex, name):
+            await ctx.respond(config['features']['modify']['rename_fail_msg'], ephemeral=True)
+            return
+        # Change the name
+        await SERVER.edit(name=name, reason=ctx.user.mention + ' requested name change')
+        await ANNOUNCE_CHANNEL.send("Server name changed by " + ctx.user.mention + ": " + name)
+        await ctx.respond("Name updated", ephemeral=True)
 
 # Events
 
