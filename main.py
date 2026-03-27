@@ -235,10 +235,11 @@ if config['features']['voice_rooms']['enabled']:
                             discord.SelectOption(label="Voice", value="voice", emoji="📞", default=True),
                             discord.SelectOption(label="Text", value="text", emoji="💬", default=True),
                             discord.SelectOption(label="Video", value="video", emoji="📺", default=True),
+                            discord.SelectOption(label="Activities", value="play", emoji="🎮", default=True)
                         ],
                         required=False,
                         min_values=0,
-                        max_values=3
+                        max_values=4
                     ),
                     description="Decide what other people can do in your room, you always get everything"
                 ),
@@ -271,10 +272,11 @@ if config['features']['voice_rooms']['enabled']:
             can_talk = "voice" in self.children[2].item.values
             can_text = "text" in self.children[2].item.values
             can_stream = "video" in self.children[2].item.values
+            can_play = "play" in self.children[2].item.values
             user_limit = int(self.children[3].item.value) if self.children[3].item.value.isdigit() else 0
             # Set the permissions
             perms = {
-                SERVER.default_role: discord.PermissionOverwrite(view_channel=False, send_messages=False, connect=False, speak=can_talk, stream=can_stream, set_voice_channel_status=False),
+                SERVER.default_role: discord.PermissionOverwrite(view_channel=False, send_messages=False, connect=False, speak=can_talk, stream=can_stream, set_voice_channel_status=False, start_embedded_activities=False),
                 interaction.user: discord.PermissionOverwrite(
                     view_channel=True,
                     send_messages=True,
@@ -285,19 +287,20 @@ if config['features']['voice_rooms']['enabled']:
                     move_members=True,
                     speak=True,
                     stream=True,
+                    start_embedded_activities=True,
                     manage_permissions=config['features']['voice_rooms']['allow_perm_change']
                 )
             }
             if priv == 0:
-                perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True)
+                perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True, start_embedded_activities=can_play)
             else:
-                perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=False, connect=False)
+                perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=False, connect=False, start_embedded_activities=False)
             if priv <= 1:
-                perms[PLUS_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True)
+                perms[PLUS_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True, start_embedded_activities=can_play)
             if priv <= 2:
-                perms[VIP_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True)
+                perms[VIP_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True, start_embedded_activities=can_play)
             if priv <= 3:
-                perms[VICE_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True)
+                perms[VICE_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True, start_embedded_activities=can_play)
             # Create the channel
             crvc = await VOICE_CATEGORY.create_voice_channel(
                 name=name,
