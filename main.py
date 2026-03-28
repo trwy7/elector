@@ -340,6 +340,7 @@ if config['features']['voice_rooms']['enabled']:
                 overwrites=perms,
                 user_limit=user_limit
             )
+            vc_owners[crvc.id] = interaction.user.id
             logger.info("%s created a voice channel: '%s'", interaction.user.name, name)
             await crvc.set_status("Created by " + interaction.user.name) # type: ignore
             if interaction.user.voice: # type: ignore
