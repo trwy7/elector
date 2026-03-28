@@ -355,7 +355,7 @@ if config['features']['voice_rooms']['enabled']:
                 # Check if anyone is in
                 nvc = SERVER.get_channel(crvc.id) # this probably works
                 # Delete if not
-                if len(nvc.members) == 0: # type: ignore
+                if nvc and len(nvc.members) == 0: # type: ignore
                     await nvc.delete(reason="Nobody joined in time") # type: ignore
                     await interaction.followup.send("Nobody joined in time", ephemeral=True, delete_after=10)
                     logger.info("Nobody joined '%s' in time", name)
