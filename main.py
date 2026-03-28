@@ -406,12 +406,23 @@ if config['features']['voice_rooms']['enabled']:
             await ctx.respond("You do not own this voice channel", ephemeral=True)
             return
         # Move everyone out
+        cant_move = []
         if move_to and cvc.id != move_to.id:
-            # Move them first for call notification reasons
+            # Make sure the owner can connect
+            # Right now discord will throw an "invalid channel id" if you can't connect anyway, but if they fix that bug this will catch it
+            if not move_to.permissions_for(ctx.user).connect:
+                await ctx.respond(f"You do not have permission to connect to {move_to.mention}", ephemeral=True)
+                return
+            # Move the owner first for call notification reasons
             await ctx.user.move_to(move_to)
             for mm in cvc.members:
                 if mm.id == ctx.user.id:
                     continue # we already moved them
+                # Make sure the individual can connect
+                if not move_to.permissions_for(mm).connect:
+                    cant_move.append(mm.mention)
+                    continue
+                # Move them
                 await mm.move_to(move_to)
         # Delete the channel
         try:
@@ -419,7 +430,11 @@ if config['features']['voice_rooms']['enabled']:
         except discord.errors.NotFound:
             # Probably deleted because nobody is in it
             pass
-        await ctx.respond("Done", ephemeral=True)
+        if cant_move:
+            rmsg = f"The channel was deleted, but the following people were not able to join {move_to.mention}:\n- " + "\n- ".join(cant_move)
+        else:
+            rmsg = "Done"
+        await ctx.respond(rmsg, ephemeral=True)
 
 ## Kicking
 
@@ -680,6 +695,7 @@ async def on_raw_member_remove(payload: discord.RawMemberRemoveEvent):
 
 @bot.event
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+    logger.debug("%s updated voice state", member.name)
     if not init_complete:
         return
     # Check if someone left a room, and it is now empty
