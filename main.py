@@ -236,6 +236,25 @@ if config['features']['voice_rooms']['enabled']:
     # slash group because you cannot normally add spaces
     vc_cmds = bot.create_group("vc", "Voice channel commands")
 
+    # require_own decorator
+
+    def require_own_vc(func):
+        @functools.wraps(func)
+        async def wrapper(ctx, *args, **kwargs):
+            # Make sure they are in a voice channel
+            if not ctx.user.voice:
+                await ctx.respond("You are not in a voice channel", ephemeral=True)
+                return
+            # Get the channel they are in
+            cvc = ctx.user.voice.channel
+            # Make sure they own it
+            if vc_owners.get(cvc.id) != ctx.user.id:
+                logger.debug("%s does not own %s: %s", ctx.user.name, cvc.name, str(vc_owners))
+                await ctx.respond("You do not own this voice channel", ephemeral=True)
+                return
+            return func(ctx, *args, **kwargs)
+        return wrapper
+
     # VC create
 
     class CreateVCModal(discord.ui.DesignerModal):
@@ -389,22 +408,15 @@ if config['features']['voice_rooms']['enabled']:
             CreateVCModal(ctx.user.name, pvalid)
         )
 
+    # VC end
+
     @vc_cmds.command(name="end", description="Delete your voice channel")
     @discord.guild_only()
     @option(name="move_to", description="Where to move everyone, leave blank to kick everyone")
+    @require_own_vc
     async def vc_delete_cmd(ctx: discord.ApplicationContext, move_to: discord.VoiceChannel=None):
         await ctx.defer(ephemeral=True)
-        # Make sure they are in a voice channel
-        if not ctx.user.voice:
-            await ctx.respond("You are not in a voice channel", ephemeral=True)
-            return
-        # Get the channel they are in
         cvc = ctx.user.voice.channel
-        # Make sure they own it
-        if vc_owners.get(cvc.id) != ctx.user.id:
-            logger.debug("%s does not own %s: %s", ctx.user.name, cvc.name, str(vc_owners))
-            await ctx.respond("You do not own this voice channel", ephemeral=True)
-            return
         # Move everyone out
         cant_move = []
         if move_to and cvc.id != move_to.id:
@@ -435,6 +447,15 @@ if config['features']['voice_rooms']['enabled']:
         else:
             rmsg = "Done"
         await ctx.respond(rmsg, ephemeral=True)
+
+    # VC rename
+
+    @vc_cmds.command(name="rename", description="Delete your voice channel")
+    @discord.guild_only()
+    @option(name="name", description="The new name for your channel")
+    @require_own_vc
+    async def vc_rename_cmd(ctx: discord.ApplicationContext, name: str):
+        pass
 
 ## Kicking
 
