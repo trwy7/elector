@@ -252,7 +252,7 @@ if config['features']['voice_rooms']['enabled']:
                 logger.debug("%s does not own %s: %s", ctx.user.name, cvc.name, str(vc_owners))
                 await ctx.respond("You do not own this voice channel", ephemeral=True)
                 return
-            return func(ctx, *args, **kwargs)
+            return await func(ctx, *args, **kwargs)
         return wrapper
 
     # VC create
