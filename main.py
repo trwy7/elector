@@ -647,6 +647,8 @@ async def on_raw_member_remove(payload: discord.RawMemberRemoveEvent):
 
 @bot.event
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+    if not init_complete:
+        return
     # Check if someone left a room, and it is now empty
     if config['features']['voice_rooms']['enabled'] and \
         before.channel and before.channel != after.channel \
