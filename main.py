@@ -342,7 +342,7 @@ if config['features']['voice_rooms']['enabled']:
             )
             vc_owners[crvc.id] = interaction.user.id
             logger.info("%s created a voice channel: '%s'", interaction.user.name, name)
-            await crvc.set_status("Created by " + interaction.user.name) # type: ignore
+            await crvc.set_status("Created by " + interaction.user.name, reason="Initial room setup")
             if interaction.user.voice: # type: ignore
                 # Move them into their new voice channel
                 await interaction.user.move_to(crvc, reason="User made voice channel") # type: ignore
@@ -388,6 +388,38 @@ if config['features']['voice_rooms']['enabled']:
         await ctx.send_modal(
             CreateVCModal(ctx.user.name, pvalid)
         )
+
+    @vc_cmds.command(name="end", description="Delete your voice channel")
+    @discord.guild_only()
+    @option(name="move_to", description="Where to move everyone, leave blank to kick everyone")
+    async def vc_delete_cmd(ctx: discord.ApplicationContext, move_to: discord.VoiceChannel=None):
+        await ctx.defer(ephemeral=True)
+        # Make sure they are in a voice channel
+        if not ctx.user.voice:
+            await ctx.respond("You are not in a voice channel", ephemeral=True)
+            return
+        # Get the channel they are in
+        cvc = ctx.user.voice.channel
+        # Make sure they own it
+        if vc_owners.get(cvc.id) != ctx.user.id:
+            logger.debug("%s does not own %s: %s", ctx.user.name, cvc.name, str(vc_owners))
+            await ctx.respond("You do not own this voice channel", ephemeral=True)
+            return
+        # Move everyone out
+        if move_to and cvc.id != move_to.id:
+            # Move them first for call notification reasons
+            await ctx.user.move_to(move_to)
+            for mm in cvc.members:
+                if mm.id == ctx.user.id:
+                    continue # we already moved them
+                await mm.move_to(move_to)
+        # Delete the channel
+        try:
+            await cvc.delete(reason="Owner requested deletion")
+        except discord.errors.NotFound:
+            # Probably deleted because nobody is in it
+            pass
+        await ctx.respond("Done", ephemeral=True)
 
 ## Kicking
 
@@ -658,8 +690,12 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
         # It is a room, and is now empty. Delete it
         if before.channel.id in vc_owners:
             del vc_owners[before.channel.id]
-        await before.channel.delete(reason="The room is now empty")
-        logger.info("Deleted stale voice channel")
+        try:
+            await before.channel.delete(reason="The room is now empty")
+            logger.info("Deleted stale voice channel")
+        except discord.errors.NotFound:
+            pass
+        return
     # Save their current voice state
     if before.channel and before.channel == after.channel:
         logger.debug("Saving voice perms for %s", member.name)
