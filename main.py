@@ -296,7 +296,7 @@ if config['features']['voice_rooms']['enabled']:
                 if cvc == interaction.user.id: # type: ignore
                     owned += 1
                     if owned >= maxr:
-                        await interaction.respond(f"You can only have {str(maxr)} room" + ('' if maxr == 1 else 's'))
+                        await interaction.respond(f"You can only have {str(maxr)} room" + ('' if maxr == 1 else 's'), ephemeral=True)
                         return
             # Get the responses
             name = self.children[0].item.value if self.children[0].item.value else interaction.user.name # type: ignore
