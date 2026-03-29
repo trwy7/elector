@@ -37,8 +37,6 @@ features:
   leader:
     # Have people vote for leader every saturday
     elections: true # TODO: implement
-    # Leader election channel name
-    election_channel_name: "leader-vote"
     # Start the vote again when the leader leaves
     elect_on_leave: true # TODO: implement
     # Let people overthrow the leader

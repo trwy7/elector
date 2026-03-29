@@ -121,12 +121,18 @@ async def on_ready():
         logger.info("Deleting old channel: %s", dc.name)
         await dc.delete(reason="Deleting voice rooms on bot start")
 
+    found_lv = None
+
     for pv in VOTE_CATEGORY.channels:
         if pv.topic and pv.topic.startswith("!"):
             await pv.delete(reason="Deleting stale vote channels on bot start")
+        if pv.name == "election":
+            found_lv = pv
 
     await bot.sync_commands()
     init_complete = True
+    if found_lv:
+        await restore_election_state(found_lv)
 
 # Functions
 
@@ -225,20 +231,30 @@ def requireperm(level: int):
 
 leader_vote_lock = Lock()
 
+async def restore_election_state(channel: discord.TextChannel):
+    cs = channel.topic.splitlines()
+    logger.info("Restoring leader vote channel state")
+    match cs[1].removeprefix("state"):
+        case "0":
+            # Too early to do anything, restart the whole vote
+            oreason = cs[2]
+            await channel.delete(reason="Restoring vote channel from state 0")
+            await election_start(oreason)
+
 async def election_start(reason: str):
     with leader_vote_lock:
         # Double check no vote is running
         nc: discord.CategoryChannel = bot.get_channel(VOTE_CATEGORY.id) # prevents cache issues
         for vc in nc.channels:
-            if vc.name == config['features']['leader']['election_channel_name']:
+            if vc.name == "election":
                 return "There is already an election running"
         # Create the channel
         # The channel topic will store data so I dont need to have any disk writes
         votec = await VOTE_CATEGORY.create_text_channel(
-            name=config['features']['leader']['election_channel_name'],
+            name="election",
             reason="Leader election started",
             position=0,
-            overwrites={SERVER.default_role: discord.PermissionOverwrite(view_channel=False)}, # TODO: set this later in the process to not ping everyone
+            overwrites={SERVER.default_role: discord.PermissionOverwrite(view_channel=False)},
             topic=f"Vote for a new {LEADER_ROLE.mention}!\nstate0\n" + reason
         )
         # Send initial message
