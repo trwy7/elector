@@ -188,12 +188,14 @@ async def public_log(embed: discord.Embed):
 async def admin_log(embed: discord.Embed):
     await LOG_CHANNEL.send(embed=embed)
 
-def set_vote_channel_perms(by, to, privacy):
+def set_vote_channel_perms(privacy: int, by=None, to=None):
     perms = {
-        SERVER.default_role: discord.PermissionOverwrite(view_channel=False, add_reactions=False),
-        to: discord.PermissionOverwrite(view_channel=False),
-        by: discord.PermissionOverwrite(view_channel=True)
+        SERVER.default_role: discord.PermissionOverwrite(view_channel=False, add_reactions=False)
     }
+    if to:
+        perms[to] = discord.PermissionOverwrite(view_channel=False)
+    if by:
+        perms[to] = discord.PermissionOverwrite(view_channel=True)
     if privacy == 0:
         perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True)
     if privacy <= 1:
@@ -218,6 +220,50 @@ def requireperm(level: int):
             return await func(ctx, *args, **kwargs)
         return wrapper
     return decorator
+
+# Leader elections
+
+leader_vote_lock = Lock()
+
+async def election_start(reason: str):
+    with leader_vote_lock:
+        # Double check no vote is running
+        nc: discord.CategoryChannel = bot.get_channel(VOTE_CATEGORY.id) # prevents cache issues
+        for vc in nc.channels:
+            if vc.name == config['features']['leader']['election_channel_name']:
+                return "There is already an election running"
+        # Create the channel
+        # The channel topic will store data so I dont need to have any disk writes
+        votec = await VOTE_CATEGORY.create_text_channel(
+            name=config['features']['leader']['election_channel_name'],
+            reason="Leader election started",
+            position=0,
+            overwrites={SERVER.default_role: discord.PermissionOverwrite(view_channel=False)}, # TODO: set this later in the process to not ping everyone
+            topic=f"Vote for a new {LEADER_ROLE.mention}!\nstate0\n" + reason
+        )
+        # Send initial message
+        init_desc = f"{reason} Elect a new {LEADER_ROLE.mention}! React with ✅ on each person you would like to vote for."
+        init_msg = await votec.send(embed=discord.Embed(color=discord.Color.teal(), title="Election", description=init_desc))
+    new_topic = votec.topic + "\n" + str(init_msg.id)
+    # Get members that can be promoted and send messages
+    required_perm = config['permissions']['allow_leader']
+    ns: discord.Guild = bot.get_guild(SERVER.id)
+    last_member_msg = None
+    for cm in ns.members:
+        if await get_user_perm_level(cm) >= required_perm:
+            last_member_msg = await votec.send(cm.mention)
+            last_member_msg.add_reaction("✅")
+    if not last_member_msg:
+        # Uh oh, nobody is eligible.
+        logger.error("An election was supposed to happen, but nobody was eligible")
+        await votec.delete(reason="Nobody is eligible for election")
+        return "Nobody is eligible to be elected"
+    # Add the final message to the topic to fetch later
+    new_topic += "\n" + str(last_member_msg.id)
+    new_topic.replace("state0", "state1")
+    await votec.edit(overwrites=await set_vote_channel_perms(config['permissions']['allow_leader_vote']), topic=new_topic, reason="Unlocking vote channel")
+    await asyncio.sleep(1) # just in case
+    await votec.send("Vote is open! @everyone") # TODO: add into config
 
 # Commands
 
@@ -527,7 +573,7 @@ if config['features']['kick']['votekick']['enabled']:
             await ctx.respond("You cannot kick " + member.mention, ephemeral=True)
             return
         # Set vote permissions
-        perms = set_vote_channel_perms(ctx.user, member, config['permissions']['allow_kick_vote'])
+        perms = set_vote_channel_perms(config['permissions']['allow_kick_vote'], ctx.user, member)
         # Create the channel
         c = await VOTE_CATEGORY.create_text_channel("kick-" + member.name, reason="Votekick started", topic="Vote to kick " + member.mention, overwrites=perms)
         # Send the message
@@ -609,7 +655,7 @@ if config['features']['plusvote']['enabled']:
             await ctx.respond(f"{member.mention} needs to be in the server for at least {str(config['features']['plusvote']['required_wait'])} hours before you can promote them")
             return
         # Set vote permissions
-        perms = set_vote_channel_perms(ctx.user, member, config['permissions']['allow_promote_vote'])
+        perms = set_vote_channel_perms(config['permissions']['allow_promote_vote'], ctx.user, member)
         # Create the channel
         c = await VOTE_CATEGORY.create_text_channel("promote-" + member.name, reason="Promotion started", topic="Vote to promote " + member.mention, overwrites=perms)
         # Send the message

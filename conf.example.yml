@@ -37,6 +37,8 @@ features:
   leader:
     # Have people vote for leader every saturday
     elections: true # TODO: implement
+    # Leader election channel name
+    election_channel_name: "leader-vote"
     # Start the vote again when the leader leaves
     elect_on_leave: true # TODO: implement
     # Let people overthrow the leader
@@ -157,7 +159,7 @@ permissions:
   # Allow people to become leader, should be 2 at max
   allow_leader: 2 # TODO: implement
   # Allow people to vote in leader elections
-  allow_leader_vote: 1 # TODO: implement
+  allow_leader_vote: 1
   # Allow people to start a votekick
   allow_kick_start: 2
   # Allow people to vote in kick votes
