@@ -239,6 +239,7 @@ def election_lock(func):
                 await ctx.respond("You cannot run this command during an election")
                 return
         return await func(ctx, *args, **kwargs)
+    return wrapper
 
 # Leader elections
 
