@@ -287,10 +287,29 @@ async def election_start(reason: str):
         return "Nobody is eligible to be elected"
     # Add the final message to the topic to fetch later
     new_topic += "\n" + str(last_member_msg.id)
+    # Calculate end time
+    current_time = datetime.now()
+    target_time = current_time.replace(hour=16, minute=0, second=0, microsecond=0) # Force end at 4 PM
+    if current_time > target_time:
+        logger.debug("Vote started too late in the day, setting end to next day")
+        target_time += timedelta(days=1)
+    if (target_time - current_time) < timedelta(hours=5):
+        logger.debug("Vote end time is too close to now, extending by 5 hours")
+        target_time += timedelta(hours=5)
+    logger.info("Vote ends at %s", target_time)
+    # Add end time to save state
+    new_topic += "\n" + str(round(target_time.timestamp()))
+    # Update end state
     new_topic.replace("state0", "state1")
+    # Save the state and unlock the channel
     await votec.edit(overwrites=await set_vote_channel_perms(config['permissions']['allow_leader_vote']), topic=new_topic, reason="Unlocking vote channel")
-    await asyncio.sleep(1) # just in case
+    await asyncio.sleep(1) # Just in case discord does not automatically update
     await votec.send("Vote is open! @everyone") # TODO: add into config
+    return await election_wait_and_tally(votec)
+
+async def election_wait_and_tally(channel: discord.TextChannel):
+    """WARNING: channel MUST BE UP TO DATE, YOU MAY NEED TO REFRESH THE STATE"""
+    pass
 
 # Commands
 
@@ -622,7 +641,7 @@ if config['features']['kick']['votekick']['enabled']:
 if config['features']['kick']['forcekick']['enabled']:
     @bot.user_command(name="kick")
     @requireperm(config['permissions']['allow_forcekick'])
-    @election_lock
+    @election_lock # TODO: sync with config file
     @commands.cooldown(config['features']['kick']['forcekick']['times'], config['features']['kick']['forcekick']['cooldown'], commands.BucketType.user)
     async def forcekick_cmd(ctx: discord.ApplicationContext, member: discord.Member):
         # TODO: Delete the channel if they leave
