@@ -227,6 +227,17 @@ def requireperm(level: int):
         return wrapper
     return decorator
 
+def election_lock(func):
+    @functools.wraps(func)
+    async def wrapper(ctx: discord.ApplicationContext, *args, **kwargs):
+        # there is probably a better way of doing this
+        rvc: list[discord.TextChannel] = bot.get_channel(VOTE_CATEGORY.id).channels
+        for vc in rvc:
+            if vc.name == "election":
+                await ctx.respond("You cannot run this command during an election")
+                return
+        return await func(ctx, *args, **kwargs)
+
 # Leader elections
 
 leader_vote_lock = Lock()
@@ -562,6 +573,7 @@ vkick_lock = Lock()
 if config['features']['kick']['votekick']['enabled']:
     @bot.user_command(name="votekick")
     @requireperm(config['permissions']['allow_kick_start'])
+    @election_lock
     @commands.cooldown(config['features']['kick']['votekick']['times'], config['features']['kick']['votekick']['cooldown'], commands.BucketType.user)
     async def votekick_cmd(ctx: discord.ApplicationContext, member: discord.Member):
         # TODO: Delete the channel if they leave
@@ -610,6 +622,7 @@ if config['features']['kick']['votekick']['enabled']:
 if config['features']['kick']['forcekick']['enabled']:
     @bot.user_command(name="kick")
     @requireperm(config['permissions']['allow_forcekick'])
+    @election_lock
     @commands.cooldown(config['features']['kick']['forcekick']['times'], config['features']['kick']['forcekick']['cooldown'], commands.BucketType.user)
     async def forcekick_cmd(ctx: discord.ApplicationContext, member: discord.Member):
         # TODO: Delete the channel if they leave
@@ -640,6 +653,7 @@ if config['features']['kick']['forcekick']['enabled']:
 if config['features']['plusvote']['enabled']:
     @bot.user_command(name="promote")
     @requireperm(config['permissions']['allow_promote_start'])
+    @election_lock
     @commands.cooldown(config['features']['plusvote']['times'], config['features']['plusvote']['cooldown'], commands.BucketType.user)
     async def promote_user_cmd(ctx: discord.ApplicationContext, member: discord.Member):
         # TODO: Delete the channel if they leave
