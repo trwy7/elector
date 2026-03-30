@@ -256,6 +256,14 @@ async def restore_election_state(channel: discord.TextChannel):
             await election_start(oreason)
 
 async def election_start(reason: str):
+    """Start an election, This function may take multiple hours to run.
+
+    Args:
+        reason (str): Included in the initial channel, e.g. '<person> left the server.' or '<person> was overthrown.'
+
+    Returns:
+        _type_: _description_
+    """
     with leader_vote_lock:
         # Double check no vote is running
         nc: discord.CategoryChannel = bot.get_channel(VOTE_CATEGORY.id) # Re-check cache
@@ -271,10 +279,10 @@ async def election_start(reason: str):
             reason="Leader election started",
             position=0,
             overwrites={SERVER.default_role: discord.PermissionOverwrite(view_channel=False)},
-            topic=f"Vote for a new {LEADER_ROLE.mention}!\nstate0\n" + reason
+            topic=f"Vote for a new {LEADER_ROLE.mention}!_{'‎ '*100}_\nstate0\n" + reason # Unicode to hide the state0 text
         )
         # Send initial message
-        init_desc = f"{reason} Elect a new {LEADER_ROLE.mention}! React with ✅ on each person you would like to vote for."
+        init_desc = f"{reason} It's time to elect a new {LEADER_ROLE.mention}! React with ✅ on each person you would like to vote for."
         init_msg = await votec.send(embed=discord.Embed(color=discord.Color.teal(), title="Election", description=init_desc))
     new_topic = votec.topic + "\n" + str(init_msg.id)
     # Get members that can be promoted and send messages
@@ -286,14 +294,12 @@ async def election_start(reason: str):
     for cm in ns.members:
         if await get_user_perm_level(cm) >= required_perm:
             last_member_msg = await votec.send(cm.mention)
-            last_member_msg.add_reaction("✅")
+            await last_member_msg.add_reaction("✅")
     if not last_member_msg:
         # Uh oh, nobody is eligible.
         logger.error("An election was supposed to happen, but nobody was eligible")
         await votec.delete(reason="Nobody is eligible for election")
         return "Nobody is eligible to be elected"
-    # Add the final message to the topic to fetch later
-    new_topic += "\n" + str(last_member_msg.id)
     # Calculate end time
     current_time = datetime.now()
     target_time = current_time.replace(hour=16, minute=0, second=0, microsecond=0) # Force end at 4 PM
@@ -303,20 +309,28 @@ async def election_start(reason: str):
     if (target_time - current_time) < timedelta(hours=5):
         logger.debug("Vote end time is too close to now, extending by 5 hours")
         target_time += timedelta(hours=5)
+    str_timestamp = str(round(target_time.timestamp()))
     logger.info("Vote ends at %s", target_time)
     # Add end time to save state
-    new_topic += "\n" + str(round(target_time.timestamp()))
+    new_topic += "\n" + str_timestamp
     # Update end state
     new_topic.replace("state0", "state1")
+    lm = await votec.send(f"Vote is open, it ends <t:{str_timestamp}:R>!")
+    # Add the final message to the topic to fetch later
+    new_topic += "\n" + str(lm.id)
     # Save the state and unlock the channel
-    await votec.edit(overwrites=await set_vote_channel_perms(config['permissions']['allow_leader_vote']), topic=new_topic, reason="Unlocking vote channel")
+    await votec.edit(overwrites=set_vote_channel_perms(config['permissions']['allow_leader_vote']), topic=new_topic, reason="Unlocking vote channel")
     await asyncio.sleep(1) # Just in case discord does not automatically update
-    await votec.send("Vote is open! @everyone") # TODO: add into config
+    await votec.send("@everyone") # TODO: add into config
     return await election_wait_and_tally(votec)
 
 async def election_wait_and_tally(channel: discord.TextChannel):
-    """WARNING: channel MUST BE UP TO DATE, YOU MAY NEED TO REFRESH THE STATE"""
-    pass
+    """WARNING: channel MUST BE UP TO DATE, YOU MAY NEED TO REFRESH THE STATE WITH `SERVER.fetch_channel`"""
+    state: list[str] = channel.topic.splitlines()
+    end_time = datetime.fromtimestamp(int(state[4]))
+    if not end_time:
+        return "Could not get end time from " + state[4]
+    await channel.send(end_time)
 
 # Commands
 
@@ -564,7 +578,7 @@ if config['features']['voice_rooms']['enabled']:
 
     # Invite to VC
 
-    ## TODO: Modal for invite and kick
+    ## TODO: Modal for invite and kick to allow multi user input
 
     @vc_cmds.command(name="invite", description="Add someone to your voice channel")
     @discord.guild_only()
