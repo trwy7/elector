@@ -94,7 +94,9 @@ async def on_ready():
     global init_complete, ANNOUNCE_CHANNEL, VOICE_CHANNEL, LOG_CHANNEL, VOICE_CATEGORY, VOTE_CATEGORY, LEADER_ROLE, VICE_ROLE, VIP_ROLE, PLUS_ROLE, GUEST_ROLE, SERVER, LEVEL_ROLE_MAP # pylint: disable=global-statement
     logger.info('Logged in as %s', bot.user)
 
-    ANNOUNCE_CHANNEL = bot.get_channel(config['channels']['public']) # type: ignore # these return the right type, but pycord dosent know that
+    # NOTE: If this becomes buggy, consider converting to lambda functions, and fallback to SERVER.fetch_channel
+
+    ANNOUNCE_CHANNEL = bot.get_channel(config['channels']['public']) # type: ignore # these return the right type, but pylance dosent know that
     VOICE_CHANNEL = bot.get_channel(config['channels']['voice']) # type: ignore
     LOG_CHANNEL = bot.get_channel(config['channels']['logs']) # type: ignore
     VOICE_CATEGORY = bot.get_channel(config['channels']['voice_rooms_category']) # type: ignore
@@ -231,7 +233,7 @@ def election_lock(func):
     @functools.wraps(func)
     async def wrapper(ctx: discord.ApplicationContext, *args, **kwargs):
         # there is probably a better way of doing this
-        rvc: list[discord.TextChannel] = bot.get_channel(VOTE_CATEGORY.id).channels
+        rvc: list[discord.TextChannel] = SERVER.fetch_channel(VOTE_CATEGORY.id).channels
         for vc in rvc:
             if vc.name == "election":
                 await ctx.respond("You cannot run this command during an election")
@@ -255,7 +257,9 @@ async def restore_election_state(channel: discord.TextChannel):
 async def election_start(reason: str):
     with leader_vote_lock:
         # Double check no vote is running
-        nc: discord.CategoryChannel = bot.get_channel(VOTE_CATEGORY.id) # prevents cache issues
+        nc: discord.CategoryChannel = bot.get_channel(VOTE_CATEGORY.id) # Re-check cache
+        if not nc:
+            nc = SERVER.fetch_channel(VOTE_CATEGORY.id) # No cache for some reason, manually fetch the channel
         for vc in nc.channels:
             if vc.name == "election":
                 return "There is already an election running"
@@ -275,6 +279,8 @@ async def election_start(reason: str):
     # Get members that can be promoted and send messages
     required_perm = config['permissions']['allow_leader']
     ns: discord.Guild = bot.get_guild(SERVER.id)
+    if not ns:
+        ns = await bot.fetch_guild(SERVER.id)
     last_member_msg = None
     for cm in ns.members:
         if await get_user_perm_level(cm) >= required_perm:
@@ -607,7 +613,9 @@ if config['features']['kick']['votekick']['enabled']:
             await ctx.respond("You cannot kick yourself", ephemeral=True)
             return
         # Make sure there is not already a vote
-        nc: discord.CategoryChannel = bot.get_channel(VOTE_CATEGORY.id) # prevents cache issues
+        nc: discord.CategoryChannel = bot.get_channel(VOTE_CATEGORY.id) # Re-check cache
+        if not nc:
+            nc = SERVER.fetch_channel(VOTE_CATEGORY.id) # No cache for some reason, manually fetch the channel
         for vc in nc.channels:
             if vc.name.startswith("kick-") and str(member.id) in vc.topic:
                 await ctx.respond("There is already a kick vote going on in " + vc.mention, ephemeral=True)
@@ -687,7 +695,9 @@ if config['features']['plusvote']['enabled']:
             await ctx.respond("You cannot promote yourself", ephemeral=True)
             return
         # Make sure there is not already a vote
-        nc: discord.CategoryChannel = bot.get_channel(VOTE_CATEGORY.id) # prevents cache issues
+        nc: discord.CategoryChannel = bot.get_channel(VOTE_CATEGORY.id) # Re-check cache
+        if not nc:
+            nc = SERVER.fetch_channel(VOTE_CATEGORY.id) # No cache for some reason, manually fetch the channel
         for vc in nc.channels:
             if vc.name.startswith("promote-") and str(member.id) in vc.topic:
                 await ctx.respond("There is already a promotion vote going on in " + vc.mention, ephemeral=True)
@@ -899,7 +909,9 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     logger.debug("'%s' reacted to a message with '%s'", payload.member.name, payload.emoji.name)
     if payload.user_id == bot.user.id:
         return
-    channel = bot.get_channel(payload.channel_id)
+    channel = bot.get_channel(payload.channel_id) # Check cache
+    if not channel:
+        channel = SERVER.fetch_channel(payload.channel_id)
     message = await channel.fetch_message(payload.message_id) # reminder: bot.get_message uses the cache, we cannot use the cache here
     # warning: whole lotta nesting ahead
     # I tried commenting as much as possible, idk if it actually helps readability
