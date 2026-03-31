@@ -284,8 +284,10 @@ def election_lock(func):
     @functools.wraps(func)
     async def wrapper(ctx: discord.ApplicationContext, *args, **kwargs):
         # there is probably a better way of doing this
-        rvc: list[discord.TextChannel] = SERVER.fetch_channel(VOTE_CATEGORY.id).channels
-        for vc in rvc:
+        rvc = bot.get_channel(VOTE_CATEGORY.id)
+        if not rvc:
+            rvc: discord.CategoryChannel = SERVER.fetch_channel(VOTE_CATEGORY.id)
+        for vc in rvc.channels:
             if vc.name == "election":
                 await ctx.respond("You cannot run this command during an election")
                 return
@@ -1259,7 +1261,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     channel = bot.get_channel(payload.channel_id) # Check cache
     if not channel:
         channel = SERVER.fetch_channel(payload.channel_id)
-    message = await channel.fetch_message(payload.message_id) # reminder: bot.get_message uses the cache, we cannot use the cache here
+    message: discord.Message = await channel.fetch_message(payload.message_id) # reminder: bot.get_message uses the cache, we cannot use the cache here
     # warning: whole lotta nesting ahead
     # I tried commenting as much as possible, idk if it actually helps readability
     if message.channel.category_id == VOTE_CATEGORY.id and message.author.bot:
@@ -1299,9 +1301,9 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                         # Get all opposed, exclude bots
                         opposed = [u for u in await next((r for r in message.reactions if str(r.emoji) == "✅"), None).users().flatten() if not u.bot]
                         # Get the person
+                        member = SERVER.get_member(int(message.channel.topic.split("<@")[-1].removesuffix(">")))
                         await message.clear_reactions()
                         await message.channel.edit(topic="! The vote failed")
-                        member = SERVER.get_member(int(message.channel.topic.split("<@")[-1].removesuffix(">")))
                         if member:
                             # Send confirmation
                             await message.channel.send(f"The vote failed. The results were {len(approved)}-{len(opposed)}")
@@ -1367,7 +1369,10 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                             await admin_log(discord.Embed(color=discord.Color.yellow(), title="Promotion failed with error", description="The promotion failed and the user was not found"))
                             await asyncio.sleep(60)
                             await message.channel.delete(reason="Vote failed and member was not found.")
-
+            case "overthrow":
+                reaction = next((r for r in message.reactions if str(r.emoji) == str(payload.emoji)), None)
+                if reaction and reaction.count > config['features']['leader']['overthrow']:
+                    ... # TODO: add
 arlist: list[tuple[re.Pattern, str, bool]] = [
     (re.compile(s['match']), s['send'], s['delete'])
     for s in config['features']['fun']['autoreply']
