@@ -493,8 +493,14 @@ async def election_wait_and_tally(channel: discord.TextChannel):
     if not has_cast:
         # No votes were cast, keep the current leader and vice-leader
         await channel.send("No votes were cast")
-        # TODO: add overthrow logic here once finished
-        return
+        # Change to state 3
+        state = state[:3]
+        state[2] = conv_to_steg_topic(3)
+        state.append(conv_to_steg_topic(round(datetime.now().timestamp())))
+        # Apply new state
+        await channel.edit(topic="\n".join(state), reason="Changing election state")
+        # Next phase!
+        return await election_cleanup(channel)
     # Remove leader and vice-leader
     nleader = await SERVER.fetch_role(LEADER_ROLE.id)
     nvice = await SERVER.fetch_role(VICE_ROLE.id)
