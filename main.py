@@ -342,7 +342,6 @@ async def restore_election_state(channel: discord.TextChannel):
     elif state == 3:
         await election_cleanup(channel)
 
-@scheduler.scheduled_job('cron', day_of_week=config['features']['leader']['election_day'], hour=config['features']['leader']['election_hour'])
 async def election_start(reason: str=""):
     """Start an election, This function may take multiple hours to run.
 
@@ -419,6 +418,9 @@ async def election_start(reason: str=""):
         fields=[discord.EmbedField("Reason", reason)] if reason.strip() else None
     ))
     return await election_wait_and_tally(votec)
+
+if config['features']['leader']['scheduled_elections']:
+    scheduler.add_job(election_start, 'cron', day_of_week=config['features']['leader']['election_day'], hour=config['features']['leader']['election_hour'])
 
 async def election_wait_and_tally(channel: discord.TextChannel):
     """WARNING: channel MUST BE UP TO DATE, YOU MAY NEED TO REFRESH THE STATE WITH `SERVER.fetch_channel`"""

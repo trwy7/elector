@@ -36,7 +36,7 @@ roles:
 features:
   leader:
     # Have people vote for leader every saturday
-    scheduled_elections: true # TODO: implement
+    scheduled_elections: true
     # Scheduled election start day of week
     # Can be mon,tue,wed,thu,fri,sat,sun
     election_day: "sat"
