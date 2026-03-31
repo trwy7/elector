@@ -408,6 +408,7 @@ async def election_wait_and_tally(channel: discord.TextChannel):
     await asyncio.sleep((end_time - datetime.now()).total_seconds() - 10)
     # Send final call
     fmsg = await channel.send("Vote ends in 10 seconds")
+    await fmsg.pin(reason="Election status message")
     await asyncio.sleep(5)
     await fmsg.edit("Vote ends in 5 seconds")
     await asyncio.sleep(5)
@@ -527,6 +528,8 @@ async def election_wait_and_tally(channel: discord.TextChannel):
     nwrites[LEADER_ROLE] = discord.PermissionOverwrite(send_messages=True, view_channel=True)
     nwrites[VICE_ROLE] = discord.PermissionOverwrite(send_messages=True, view_channel=True)
     await channel.edit(overwrites=nwrites, reason="Election over, locking channel")
+    # Purge messages again
+    await channel.purge(reason="Vote has concluded", after=fmsg, limit=1000)
     # Announce and ping
     await channel.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!") # TODO: Send another message here when vice-leader selection is added
     await ANNOUNCE_CHANNEL.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!")
