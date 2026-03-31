@@ -374,6 +374,12 @@ async def election_start(reason: str=""):
     await votec.edit(overwrites=set_vote_channel_perms(config['permissions']['allow_leader_vote']), topic=new_topic, reason="Unlocking vote channel")
     await asyncio.sleep(1) # Just in case discord does not automatically update
     await votec.send("@everyone ^") # TODO: add into config
+    await admin_log(discord.Embed(
+        color=discord.Color.yellow(),
+        title="Election",
+        description=f"An election has started. It is scheduled to end <t:{str(timestamp)}:R> (<t:{str(timestamp)}:F>)",
+        fields=[discord.EmbedField("Reason", reason)] if reason.strip() else None
+    ))
     return await election_wait_and_tally(votec)
 
 async def election_wait_and_tally(channel: discord.TextChannel):
@@ -440,7 +446,7 @@ async def election_wait_and_tally(channel: discord.TextChannel):
         await channel.send("No votes were cast")
         # TODO: add overthrow logic here once finished
         return
-    # Delete the messages # TODO: if the bot crashes here it cannot recover after it gets back
+    # Delete the messages # TODO: if the bot crashes here it cannot recover after it gets back. We should calculate who the leader is first, then store it, and if the bot crashes, skip the animation.
     await channel.purge(reason="Vote has concluded", before=fmsg, limit=500)
     await channel.purge(reason="Vote has concluded", after=fmsg, limit=1000)
     # Remove leader and vice-leader
@@ -508,6 +514,13 @@ async def election_wait_and_tally(channel: discord.TextChannel):
     else:
         # "Spin a wheel" (random.choice)
         new_leader = random.choice(eligible_list)
+    # Send a log
+    await admin_log(discord.Embed(
+        color=discord.Color.yellow(),
+        title="Election results",
+        description=f"An election has finished. {new_leader.mention} was given {nleader.mention}",
+        fields=res_list
+    ))
     # Rewrite channel perms
     nwrites = set_vote_channel_perms(config['permissions']['allow_election_result_view'])
     nwrites[SERVER.default_role] = discord.PermissionOverwrite(send_messages=False, view_channel=False)
@@ -519,7 +532,7 @@ async def election_wait_and_tally(channel: discord.TextChannel):
     await ANNOUNCE_CHANNEL.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!")
     # Give the person the leader role
     await new_leader.add_roles(nleader, reason="Election finished!")
-    # TODO: Refactor into new function for overthrow
+    # TODO: Refactor into new function for overthrow, and update the state
     await asyncio.sleep(3600)
     await channel.delete(reason="Election concluded")
 
