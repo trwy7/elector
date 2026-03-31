@@ -1261,10 +1261,12 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     channel = bot.get_channel(payload.channel_id) # Check cache
     if not channel:
         channel = SERVER.fetch_channel(payload.channel_id)
-    message: discord.Message = await channel.fetch_message(payload.message_id) # reminder: bot.get_message uses the cache, we cannot use the cache here
+    mesasge: discord.Message = await bot.get_message(payload.message_id)
+    if not message:
+        message = await channel.fetch_message(payload.message_id) # reminder: bot.get_message uses the cache, we cannot use the cache here
     # warning: whole lotta nesting ahead
     # I tried commenting as much as possible, idk if it actually helps readability
-    if message.channel.category_id == VOTE_CATEGORY.id and message.author.bot:
+    if message.channel.category_id == VOTE_CATEGORY.id and message.author.id == bot.user.id:
         logger.debug("A message was reacted in the vote category")
         match message.channel.name.split("-")[0]:
             case "kick":
@@ -1370,9 +1372,10 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                             await asyncio.sleep(60)
                             await message.channel.delete(reason="Vote failed and member was not found.")
             case "overthrow":
-                reaction = next((r for r in message.reactions if str(r.emoji) == str(payload.emoji)), None)
-                if reaction and reaction.count > config['features']['leader']['overthrow']:
-                    ... # TODO: add
+                if payload.emoji.name == "✅":
+                    reaction = next((r for r in message.reactions if str(r.emoji) == str(payload.emoji)), None)
+                    if reaction and reaction.count > config['features']['leader']['overthrow']:
+                        pass
 arlist: list[tuple[re.Pattern, str, bool]] = [
     (re.compile(s['match']), s['send'], s['delete'])
     for s in config['features']['fun']['autoreply']
