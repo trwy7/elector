@@ -319,7 +319,7 @@ async def restore_election_state(channel: discord.TextChannel):
         #]
         # This code is stolen from the original function, may have some bugs
         # Get new leader
-        new_leader = SERVER.fetch_member(conv_to_steg_topic_rev(cs[3]))
+        new_leader = await SERVER.fetch_member(conv_to_steg_topic_rev(cs[3]))
         if not new_leader:
             await admin_log(discord.Embed(color=discord.Color.red(), title="Election restore failed", description="Could not fetch the new leader by ID, they may have left the server."))
             await channel.delete(reason="Restore failed: New leader not found")
@@ -334,7 +334,7 @@ async def restore_election_state(channel: discord.TextChannel):
         # Change to state 3
         cs = cs[:3]
         cs[2] = conv_to_steg_topic(3)
-        cs.append(conv_to_steg_topic(datetime.now().timestamp()))
+        cs.append(conv_to_steg_topic(round(datetime.now().timestamp())))
         # Apply new state
         await channel.edit(topic="\n".join(cs), reason="Changing election state")
         # Next phase!
@@ -593,7 +593,7 @@ async def election_wait_and_tally(channel: discord.TextChannel):
     # Change to state 3
     state = state[:3]
     state[2] = conv_to_steg_topic(3)
-    state.append(conv_to_steg_topic(datetime.now().timestamp()))
+    state.append(conv_to_steg_topic(round(datetime.now().timestamp())))
     # Apply new state
     await channel.edit(topic="\n".join(state), reason="Changing election state")
     # Next phase!
@@ -614,6 +614,7 @@ async def election_cleanup(channel: discord.TextChannel):
         end_time = ended_at + timedelta(hours=12) # TODO: add to config
     else:
         end_time = ended_at + timedelta(hours=1)
+    end_time = ended_at + timedelta(seconds=10) # FIXME: TEST ONLY, ALSO TO BE REMOVED
     await asyncio.sleep((end_time - datetime.now()).total_seconds())
     leader_revoked = False
     if config['features']['leader']['vice-leader'] and config['features']['leader']['force_vice']:
@@ -621,7 +622,7 @@ async def election_cleanup(channel: discord.TextChannel):
         if len(rvice.members) == 0:
             rleader = await SERVER.fetch_role(LEADER_ROLE.id)
             for m in rleader.members:
-                m.remove_roles(rleader, reason="No vice chosen")
+                await m.remove_roles(rleader, reason="No vice chosen")
             await channel.send(f"No {VICE_ROLE.mention} was chosen")
             leader_revoked = True
             await asyncio.sleep(300) # TODO: conf option to also start a re-election
