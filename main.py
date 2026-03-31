@@ -295,8 +295,8 @@ leader_vote_lock = Lock()
 
 async def restore_election_state(channel: discord.TextChannel):
     cs = channel.topic.splitlines()
-    logger.info("Restoring leader vote channel state")
     state = conv_to_steg_topic_rev(cs[2])
+    logger.info("Restoring election channel from state %s", str(state))
     await admin_log(discord.Embed(color=discord.Color.red(), title="Restoring election", description=f"The bot was shut down during an election of state {str(state)}. Attempting to restore."))
     if state == 0:
         # Too early to do anything, restart the whole vote
