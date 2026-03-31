@@ -139,16 +139,15 @@ async def on_ready():
 
     # Make sure the steg dict is all functional
     # Commented for release
-    # TODO: comment at release
-    temp_testc = await VOTE_CATEGORY.create_text_channel("init-test-channel",
-        topic="!" + conv_to_steg_topic(1234567890),
-        reason="Testing steg",
-        overwrites={SERVER.default_role: discord.PermissionOverwrite(view_channel=False)}
-    )
-    res_topic = str(conv_to_steg_topic_rev(temp_testc.topic.removeprefix("!")))
-    await temp_testc.delete(reason="Testing steg")
-    if res_topic != "1234567890":
-        raise RuntimeError(f"Unicode steg is in wrong order: {res_topic}")
+    # temp_testc = await VOTE_CATEGORY.create_text_channel("init-test-channel",
+    #     topic="!" + conv_to_steg_topic(1234567890),
+    #     reason="Testing steg",
+    #     overwrites={SERVER.default_role: discord.PermissionOverwrite(view_channel=False)}
+    # )
+    # res_topic = str(conv_to_steg_topic_rev(temp_testc.topic.removeprefix("!")))
+    # await temp_testc.delete(reason="Testing steg")
+    # if res_topic != "1234567890":
+    #     raise RuntimeError(f"Unicode steg is in wrong order: {res_topic}")
     
     if found_lv:
         await restore_election_state(found_lv) # TODO: after development, move after sync_commands
@@ -662,11 +661,16 @@ async def init_overthrow():
 
 # Commands
 
-@bot.slash_command(name="ping", description="Make sure the bot is online")
+## Debug
+
+debug_group = bot.create_group("debug", "Debug commands")
+
+@debug_group.command(name="startelection", description="Run an election") # TODO: Expand this command into one that can be used by the leader
 @discord.guild_only()
 @discord.default_permissions(administrator=True)
-async def ping(ctx: discord.ApplicationContext):
-    await ctx.respond("Pong! You have permission level " + str(await get_user_perm_level(ctx.user)), ephemeral=True) # type: ignore
+async def start_elect_cmd(ctx: discord.ApplicationContext, reason: str=''):
+    await ctx.respond("Starting election...", ephemeral=True)
+    await election_start(reason=reason)
 
 ## Voice rooms
 
