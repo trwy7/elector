@@ -327,9 +327,16 @@ async def restore_election_state(channel: discord.TextChannel):
         await new_leader.add_roles(LEADER_ROLE, reason="Election finished!")
         # Log
         await admin_log(discord.Embed(color=discord.Color.red(), title="Election restore attempted", description=f"Warning: restoring from state 2 can be buggy. You may need to manually verify roles. {new_leader.mention} should have been given {LEADER_ROLE.mention}"))
-        # TODO: Refactor into new function for overthrow, and update the state
-        await asyncio.sleep(3600)
-        await channel.delete(reason="Election concluded")
+        # Change to state 3
+        cs = cs[:3]
+        cs[2] = conv_to_steg_topic(3)
+        cs.append(conv_to_steg_topic(datetime.now().timestamp()))
+        # Apply new state
+        await channel.edit(topic="\n".join(cs), reason="Changing election state")
+        # Next phase!
+        await election_cleanup(channel)
+    elif state == 3:
+        await election_cleanup(channel)
 
 async def election_start(reason: str=""):
     """Start an election, This function may take multiple hours to run.
@@ -447,6 +454,10 @@ async def election_wait_and_tally(channel: discord.TextChannel):
     async for usr_msg in channel.history(limit=500, oldest_first=True, after=initial, before=last): # if you have more than 100 people eligible to be voted in, you should already be finding another bot
         if not usr_msg.author.id == bot.user.id:
             logger.warning("%s was able to send a message during election init", usr_msg.author.name)
+            continue
+        if not len(usr_msg.mentions) == 1:
+            logger.debug("Skipping message that has no mentions")
+            continue
         # Get the user being voted on
         user = usr_msg.mentions[0]
         # Get the number of votes that were cast for a person
@@ -572,9 +583,64 @@ async def election_wait_and_tally(channel: discord.TextChannel):
     await ANNOUNCE_CHANNEL.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!")
     # Give the person the leader role
     await new_leader.add_roles(nleader, reason="Election finished!")
-    # TODO: Refactor into new function for overthrow, and update the state
-    await asyncio.sleep(3600)
-    await channel.delete(reason="Election concluded")
+    # Change to state 3
+    state = state[:3]
+    state[2] = conv_to_steg_topic(3)
+    state.append(conv_to_steg_topic(datetime.now().timestamp()))
+    # Apply new state
+    await channel.edit(topic="\n".join(state), reason="Changing election state")
+    # Next phase!
+    return await election_cleanup(channel)
+
+async def election_cleanup(channel: discord.TextChannel):
+    state: list[str] = channel.topic.splitlines()
+    # state = [
+    #   ignore,
+    #   startreasonraw,
+    #   stegstate,
+    #   stegelectionendtime
+    #]
+    # Get the end time
+    ended_at = datetime.fromtimestamp(conv_to_steg_topic_rev(state[3]))
+    if config['features']['leader']['vice-leader']:
+        # Give them enough time to pick a vice leader
+        end_time = ended_at + timedelta(hours=12) # TODO: add to config
+    else:
+        end_time = ended_at + timedelta(hours=1)
+    await asyncio.sleep((end_time - datetime.now()).total_seconds())
+    leader_revoked = False
+    if config['features']['leader']['vice-leader'] and config['features']['leader']['force_vice']:
+        rvice = await SERVER.fetch_role(VICE_ROLE.id)
+        if len(rvice.members) == 0:
+            rleader = await SERVER.fetch_role(LEADER_ROLE.id)
+            for m in rleader.members:
+                m.remove_roles(rleader, reason="No vice chosen")
+            await channel.send(f"No {VICE_ROLE.mention} was chosen")
+            leader_revoked = True
+            await asyncio.sleep(300) # TODO: conf option to also start a re-election
+
+    if config['features']['leader']['overthrow'] and not leader_revoked:
+        await init_overthrow()
+
+    await channel.delete(reason="Election complete!")
+
+## Misc
+
+async def init_overthrow():
+    logger.info("Creating overthrow channel")
+    overthrow_channel = await VOTE_CATEGORY.create_text_channel(
+        name="overthrow",
+        reason="Election ended",
+        position=0,
+        overwrites=set_vote_channel_perms(config['permissions']['allow_overthrow'], by=None, to=LEADER_ROLE)
+    )
+    omsg = await overthrow_channel.send(embed=discord.Embed(
+        color=discord.Color.dark_red(),
+        title="Overthrow",
+        description=f"Vote to overthrow the {LEADER_ROLE.mention}. {str(config['features']['leader']['overthrow'] + 1)} reactions are required."
+    ))
+    await omsg.add_reaction("✅")
+    await omsg.pin(reason="Overthrow init")
 
 # Commands
 

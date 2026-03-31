@@ -40,7 +40,7 @@ features:
     # Start the vote again when the leader leaves
     elect_on_leave: true # TODO: implement
     # Let people overthrow the leader
-    # Set the number of votes needed
+    # Set the number of votes needed, 0 to disable
     overthrow: 6 # TODO: implement
     # When the leader is overthrown, should they be kicked from the server?
     overthrow_kick: false # TODO: implement
@@ -160,6 +160,8 @@ permissions:
   allow_leader_vote: 1
   # Allow people to view the election channel after the vote has ended
   allow_election_result_view: 0
+  # Allow people to vote in overthrow votes
+  allow_overthrow: 1
   # Allow people to start a votekick
   allow_kick_start: 2
   # Allow people to vote in kick votes
