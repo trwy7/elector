@@ -360,6 +360,7 @@ async def election_start(reason: str=""):
         # Send initial message
         init_desc = f"{reason} It's time to elect a new {LEADER_ROLE.mention}! React with ✅ on each person you would like to vote for."
         init_msg = await votec.send(embed=discord.Embed(color=discord.Color.teal(), title="Election", description=init_desc))
+        await init_msg.pin(reason="Pinning instruction message")
     # Add initial message to topic
     new_topic = votec.topic + "\n" + conv_to_steg_topic(init_msg.id)
     # Get members that can be promoted and send messages
@@ -492,6 +493,8 @@ async def election_wait_and_tally(channel: discord.TextChannel):
     state = state[:3]
     state[2] = conv_to_steg_topic(2)
     state.append(conv_to_steg_topic(new_leader.id))
+    # Apply new state
+    await channel.edit(topic="\n".join(state), reason="Changing election state")
     # state = [
     #   ignore,
     #   startreasonraw,
