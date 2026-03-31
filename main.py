@@ -359,6 +359,9 @@ async def election_start(reason: str=""):
         for vc in nc.channels:
             if vc.name == "election":
                 return "There is already an election running"
+        for vc in nc.channels:
+            if vc.name == "overthrow":
+                await vc.delete(reason="Election about to start")
         # Create the channel
         # The channel topic will store data so I dont need to have any disk writes
         votec = await VOTE_CATEGORY.create_text_channel(
