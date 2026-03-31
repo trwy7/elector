@@ -418,7 +418,8 @@ async def election_start(reason: str=""):
         color=discord.Color.yellow(),
         title="Election",
         description=f"An election has started. It is scheduled to end <t:{str(timestamp)}:R> (<t:{str(timestamp)}:F>)",
-        fields=[discord.EmbedField("Reason", reason)] if reason.strip() else None
+        fields=[discord.EmbedField("Reason", reason)] if reason.strip() else None,
+        timestamp=current_time
     ))
     return await election_wait_and_tally(votec)
 
