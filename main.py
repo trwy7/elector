@@ -218,10 +218,6 @@ def set_vote_channel_perms(privacy: int, by=None, to=None):
     perms = {
         SERVER.default_role: discord.PermissionOverwrite(view_channel=False, add_reactions=False)
     }
-    if to:
-        perms[to] = discord.PermissionOverwrite(view_channel=False)
-    if by:
-        perms[by] = discord.PermissionOverwrite(view_channel=True)
     if privacy == 0:
         perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True)
     if privacy <= 1:
@@ -232,6 +228,10 @@ def set_vote_channel_perms(privacy: int, by=None, to=None):
         perms[VICE_ROLE] = discord.PermissionOverwrite(view_channel=True)
     if privacy <= 4:
         perms[LEADER_ROLE] = discord.PermissionOverwrite(view_channel=True)
+    if to:
+        perms[to] = discord.PermissionOverwrite(view_channel=False)
+    if by:
+        perms[by] = discord.PermissionOverwrite(view_channel=True)
     return perms
 def replace_line(string: str, replace: str, line: int):
     """Replace the line of a string
