@@ -297,6 +297,7 @@ async def restore_election_state(channel: discord.TextChannel):
     cs = channel.topic.splitlines()
     logger.info("Restoring leader vote channel state")
     state = conv_to_steg_topic_rev(cs[2])
+    await admin_log(discord.Embed(color=discord.Color.red(), title="Restoring election", description=f"The bot was shut down during an election of state {str(state)}. Attempting to restore."))
     if state == 0:
         # Too early to do anything, restart the whole vote
         oreason = cs[1]
@@ -305,6 +306,30 @@ async def restore_election_state(channel: discord.TextChannel):
     elif state == 1:
         # Restart the timer
         await election_wait_and_tally(channel)
+    elif state == 2:
+        # state = [
+        #   ignore,
+        #   startreasonraw,
+        #   stegstate,
+        #   stegnewleaderid
+        #]
+        # This code is stolen from the original function, may have some bugs
+        # Get new leader
+        new_leader = SERVER.fetch_member(conv_to_steg_topic_rev(cs[3]))
+        if not new_leader:
+            await admin_log(discord.Embed(color=discord.Color.red(), title="Election restore failed", description="Could not fetch the new leader by ID, they may have left the server."))
+            await channel.delete(reason="Restore failed: New leader not found")
+            return
+        # Announce and ping
+        await channel.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!") # TODO: Send another message here when vice-leader selection is added
+        await ANNOUNCE_CHANNEL.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!")
+        # Give the person the leader role
+        await new_leader.add_roles(LEADER_ROLE, reason="Election finished!")
+        # Log
+        await admin_log(discord.Embed(color=discord.Color.red(), title="Election restore attempted", description=f"Warning: restoring from state 2 can be buggy. You may need to manually verify roles. {new_leader.mention} should have been given {LEADER_ROLE.mention}"))
+        # TODO: Refactor into new function for overthrow, and update the state
+        await asyncio.sleep(3600)
+        await channel.delete(reason="Election concluded")
 
 async def election_start(reason: str=""):
     """Start an election, This function may take multiple hours to run.
@@ -447,9 +472,6 @@ async def election_wait_and_tally(channel: discord.TextChannel):
         await channel.send("No votes were cast")
         # TODO: add overthrow logic here once finished
         return
-    # Delete the messages # TODO: if the bot crashes here it cannot recover after it gets back. We should calculate who the leader is first, then store it, and if the bot crashes, skip the animation.
-    await channel.purge(reason="Vote has concluded", before=fmsg, limit=500)
-    await channel.purge(reason="Vote has concluded", after=fmsg, limit=1000)
     # Remove leader and vice-leader
     nleader = await SERVER.fetch_role(LEADER_ROLE.id)
     nvice = await SERVER.fetch_role(VICE_ROLE.id)
@@ -459,6 +481,26 @@ async def election_wait_and_tally(channel: discord.TextChannel):
         await cvice.remove_roles(nvice, reason="Election concluded!")
     # Get a sorted version
     sorted_vote_values = sorted(vote_dict.keys())
+    # Get new leader if there more than one person won
+    eligible_list = vote_dict[sorted_vote_values[-1]]
+    if len(eligible_list) == 1:
+        new_leader = eligible_list[0]
+    else:
+        # "Spin a wheel" (random.choice)
+        new_leader = random.choice(eligible_list)
+    # Change to state 2
+    state = state[:3]
+    state[2] = conv_to_steg_topic(2)
+    state.append(conv_to_steg_topic(new_leader.id))
+    # state = [
+    #   ignore,
+    #   startreasonraw,
+    #   stegstate,
+    #   stegnewleaderid
+    #]
+    # Delete the messages
+    await channel.purge(reason="Vote has concluded", before=fmsg, limit=500)
+    await channel.purge(reason="Vote has concluded", after=fmsg, limit=1000)
     # Set up the result embed
     res_embed = discord.Embed(
         color=discord.Color.blurple(),
@@ -507,14 +549,6 @@ async def election_wait_and_tally(channel: discord.TextChannel):
     # Show final list
     await fmsg.edit(embed=res_embed)
     await asyncio.sleep(1)
-    # Get new leader if there more than one person won
-    eligible_list = vote_dict[sorted_vote_values[-1]]
-    new_leader = None
-    if len(eligible_list) == 1:
-        new_leader = eligible_list[0]
-    else:
-        # "Spin a wheel" (random.choice)
-        new_leader = random.choice(eligible_list)
     # Send a log
     await admin_log(discord.Embed(
         color=discord.Color.yellow(),
