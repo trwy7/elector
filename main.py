@@ -218,7 +218,7 @@ def set_vote_channel_perms(privacy: int, by=None, to=None):
     if to:
         perms[to] = discord.PermissionOverwrite(view_channel=False)
     if by:
-        perms[to] = discord.PermissionOverwrite(view_channel=True)
+        perms[by] = discord.PermissionOverwrite(view_channel=True)
     if privacy == 0:
         perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True)
     if privacy <= 1:
