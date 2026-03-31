@@ -395,7 +395,7 @@ async def election_wait_and_tally(channel: discord.TextChannel):
         await channel.delete(reason="Unable to decode the end time from the channel topic. Did you manually modify it?")
         logger.error("Unable to decode the end time from the channel topic. Did you manually modify it?")
         return "Could not get/decode end time"
-    end_time = datetime.now() # FIXME: TEST ONLY, REMOVE IN PROD
+    end_time = datetime.now() + timedelta(seconds=5) # FIXME: TEST ONLY, REMOVE IN PROD
     # Wait until the end and try to be accurate, negative values continue instantly anyway
     await asyncio.sleep((end_time - datetime.now()).total_seconds() - 15)
     # Wait a little longer
