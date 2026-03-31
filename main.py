@@ -373,7 +373,7 @@ async def election_start(reason: str=""):
     # Save the state and unlock the channel
     await votec.edit(overwrites=set_vote_channel_perms(config['permissions']['allow_leader_vote']), topic=new_topic, reason="Unlocking vote channel")
     await asyncio.sleep(1) # Just in case discord does not automatically update
-    await votec.send("@everyone") # TODO: add into config
+    await votec.send("@everyone ^") # TODO: add into config
     return await election_wait_and_tally(votec)
 
 async def election_wait_and_tally(channel: discord.TextChannel):
@@ -508,6 +508,12 @@ async def election_wait_and_tally(channel: discord.TextChannel):
     else:
         # "Spin a wheel" (random.choice)
         new_leader = random.choice(eligible_list)
+    # Rewrite channel perms
+    nwrites = set_vote_channel_perms(config['permissions']['allow_election_result_view'])
+    nwrites[SERVER.default_role] = discord.PermissionOverwrite(send_messages=False, view_channel=False)
+    nwrites[LEADER_ROLE] = discord.PermissionOverwrite(send_messages=True, view_channel=True)
+    nwrites[VICE_ROLE] = discord.PermissionOverwrite(send_messages=True, view_channel=True)
+    await channel.edit(overwrites=nwrites, reason="Election over, locking channel")
     # Announce and ping
     await channel.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!") # TODO: Send another message here when vice-leader selection is added
     await ANNOUNCE_CHANNEL.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!")

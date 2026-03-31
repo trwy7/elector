@@ -155,9 +155,11 @@ permissions:
   # plus - 1
   # all - 0
   # Allow people to become leader, should be 2 at max
-  allow_leader: 2 # TODO: implement
+  allow_leader: 2
   # Allow people to vote in leader elections
   allow_leader_vote: 1
+  # Allow people to view the election channel after the vote has ended
+  allow_election_result_view: 0
   # Allow people to start a votekick
   allow_kick_start: 2
   # Allow people to vote in kick votes
