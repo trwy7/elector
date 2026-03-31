@@ -419,8 +419,7 @@ async def election_start(reason: str=""):
         color=discord.Color.yellow(),
         title="Election",
         description=f"An election has started. It is scheduled to end <t:{str(timestamp)}:R> (<t:{str(timestamp)}:F>)",
-        fields=[discord.EmbedField("Reason", reason)] if reason.strip() else None,
-        timestamp=current_time
+        fields=[discord.EmbedField("Reason", reason)] if reason.strip() else None
     ))
     return await election_wait_and_tally(votec)
 
@@ -1261,11 +1260,10 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     channel = bot.get_channel(payload.channel_id) # Check cache
     if not channel:
         channel = SERVER.fetch_channel(payload.channel_id)
-    message: discord.Message = bot.get_message(payload.message_id)
-    if not message:
-        message = await channel.fetch_message(payload.message_id) # reminder: bot.get_message uses the cache, we cannot use the cache here
+    message: discord.Message = await channel.fetch_message(payload.message_id) # reminder: bot.get_message uses the cache, we cannot use the cache here because it does not get updated here for some reason
     # warning: whole lotta nesting ahead
     # I tried commenting as much as possible, idk if it actually helps readability
+    # Reminder: Do not put a lock over this whole section because the overthrow section has a long running function
     if message.channel.category_id == VOTE_CATEGORY.id and message.author.id == bot.user.id:
         logger.debug("A message was reacted in the vote category")
         match message.channel.name.split("-")[0]:
@@ -1375,7 +1373,30 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                 if payload.emoji.name == "✅":
                     reaction = next((r for r in message.reactions if str(r.emoji) == str(payload.emoji)), None)
                     if reaction and reaction.count > config['features']['leader']['overthrow']:
-                        pass
+                        await message.clear_reactions()
+                        # Remove the role from everyone who has it
+                        nleader = SERVER.get_role(LEADER_ROLE.id)
+                        if not nleader:
+                            nleader = await SERVER.fetch_role(LEADER_ROLE.id)
+                        for m in nleader.members:
+                            if config['features']['leader']['overthrow_kick']:
+                                await m.kick(reason="Overthrown")
+                            else:
+                                await m.remove_roles(nleader, reason="Overthrown")
+                        await message.channel.send(f"{m.mention} has been overthrown!")
+                        await ANNOUNCE_CHANNEL.send(f"{m.mention} has been overthrown!")
+                        await admin_log(
+                            discord.Embed(
+                                color=discord.Color.dark_teal(),
+                                title="Leader overthrown",
+                                description=f"{LEADER_ROLE.mention} ({m.mention}) has been overthrown"
+                            )
+                        )
+                        await message.channel.edit(topic=f"! {m.mention} has been overthrown!")
+                        await asyncio.sleep(120)
+                        await message.channel.delete(reason="Vote passed!")
+                        if config['features']['leader']['overthrow']:
+                            await election_start(f"{m.mention} has been overthrown!")
 arlist: list[tuple[re.Pattern, str, bool]] = [
     (re.compile(s['match']), s['send'], s['delete'])
     for s in config['features']['fun']['autoreply']
