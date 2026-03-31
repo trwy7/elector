@@ -1,6 +1,7 @@
 import os
 import sys
 import re
+import random
 import shutil
 import asyncio
 import logging
@@ -131,10 +132,24 @@ async def on_ready():
         if pv.name == "election":
             found_lv = pv
 
-    await bot.sync_commands()
     init_complete = True
+
+    # Make sure the steg dict is all functional
+    # Commented for release
+    # TODO: comment at release
+    temp_testc = await VOTE_CATEGORY.create_text_channel("init-test-channel",
+        topic="!" + conv_to_steg_topic(1234567890),
+        reason="Testing steg",
+        overwrites={SERVER.default_role: discord.PermissionOverwrite(view_channel=False)}
+    )
+    res_topic = str(conv_to_steg_topic_rev(temp_testc.topic.removeprefix("!")))
+    await temp_testc.delete(reason="Testing steg")
+    if res_topic != "1234567890":
+        raise RuntimeError(f"Unicode steg is in wrong order: {res_topic}")
+    
     if found_lv:
-        await restore_election_state(found_lv)
+        await restore_election_state(found_lv) # TODO: after development, move after sync_commands
+    await bot.sync_commands()
 
 # Functions
 
@@ -215,6 +230,39 @@ def set_vote_channel_perms(privacy: int, by=None, to=None):
     if privacy <= 4:
         perms[LEADER_ROLE] = discord.PermissionOverwrite(view_channel=True)
     return perms
+def replace_line(string: str, replace: str, line: int):
+    """Replace the line of a string
+
+    Args:
+        string (str): The original string
+        replace (str): What to replace the line with
+        line (int): The line number starting at 0
+
+    Returns:
+        str: The result
+    """
+    nstring = string.splitlines()
+    nstring[line] = replace
+    return "\n".join(nstring)
+# STEG_DICT = {
+#     "1": "᠋",
+#     "2": "",
+#     "3": " ",
+#     "4": " ",
+#     "5": "­",
+#     "6": "͏",
+#     "7": "؜",
+#     "8": "឴",
+#     "9": "឵",
+#     "0": "	"
+# }
+STEGV_OFF = " "
+STEGV_ON = "؜"
+
+def conv_to_steg_topic(original: int) -> str:
+    return "_" + bin(original)[2:].replace("0", STEGV_OFF).replace("1", STEGV_ON) + "_"
+def conv_to_steg_topic_rev(original: str) -> int:
+    return int(original.replace(STEGV_OFF, "0").replace(STEGV_ON, "1").removeprefix("_").removesuffix("_"), 2)
 
 ## Decorators
 
@@ -248,14 +296,17 @@ leader_vote_lock = Lock()
 async def restore_election_state(channel: discord.TextChannel):
     cs = channel.topic.splitlines()
     logger.info("Restoring leader vote channel state")
-    match cs[1].removeprefix("state"):
-        case "0":
-            # Too early to do anything, restart the whole vote
-            oreason = cs[2]
-            await channel.delete(reason="Restoring vote channel from state 0")
-            await election_start(oreason)
+    state = conv_to_steg_topic_rev(cs[2])
+    if state == 0:
+        # Too early to do anything, restart the whole vote
+        oreason = cs[1]
+        await channel.delete(reason="Restoring vote channel from state 0")
+        await election_start(oreason)
+    elif state == 1:
+        # Restart the timer
+        await election_wait_and_tally(channel)
 
-async def election_start(reason: str):
+async def election_start(reason: str=""):
     """Start an election, This function may take multiple hours to run.
 
     Args:
@@ -279,12 +330,13 @@ async def election_start(reason: str):
             reason="Leader election started",
             position=0,
             overwrites={SERVER.default_role: discord.PermissionOverwrite(view_channel=False)},
-            topic=f"Vote for a new {LEADER_ROLE.mention}!_{'‎ '*100}_\nstate0\n" + reason # Unicode to hide the state0 text
+            topic=f"Vote for a new {LEADER_ROLE.mention}!\n{reason}\n{conv_to_steg_topic(0)}" # Unicode to hide the state0 text
         )
         # Send initial message
         init_desc = f"{reason} It's time to elect a new {LEADER_ROLE.mention}! React with ✅ on each person you would like to vote for."
         init_msg = await votec.send(embed=discord.Embed(color=discord.Color.teal(), title="Election", description=init_desc))
-    new_topic = votec.topic + "\n" + str(init_msg.id)
+    # Add initial message to topic
+    new_topic = votec.topic + "\n" + conv_to_steg_topic(init_msg.id)
     # Get members that can be promoted and send messages
     required_perm = config['permissions']['allow_leader']
     ns: discord.Guild = bot.get_guild(SERVER.id)
@@ -309,15 +361,15 @@ async def election_start(reason: str):
     if (target_time - current_time) < timedelta(hours=5):
         logger.debug("Vote end time is too close to now, extending by 5 hours")
         target_time += timedelta(hours=5)
-    str_timestamp = str(round(target_time.timestamp()))
-    logger.info("Vote ends at %s", target_time)
+    timestamp = round(target_time.timestamp())
+    logger.info("Vote ends at %s (%s)", target_time, str(timestamp))
     # Add end time to save state
-    new_topic += "\n" + str_timestamp
-    # Update end state
-    new_topic.replace("state0", "state1")
-    lm = await votec.send(f"Vote is open, it ends <t:{str_timestamp}:R>!")
+    new_topic += "\n" + conv_to_steg_topic(timestamp)
+    lm = await votec.send(f"Vote is open, it ends <t:{str(timestamp)}:R>!")
     # Add the final message to the topic to fetch later
-    new_topic += "\n" + str(lm.id)
+    new_topic += "\n" + conv_to_steg_topic(lm.id)
+    # Change the state to 1
+    new_topic = replace_line(new_topic, conv_to_steg_topic(1), 2)
     # Save the state and unlock the channel
     await votec.edit(overwrites=set_vote_channel_perms(config['permissions']['allow_leader_vote']), topic=new_topic, reason="Unlocking vote channel")
     await asyncio.sleep(1) # Just in case discord does not automatically update
@@ -327,10 +379,142 @@ async def election_start(reason: str):
 async def election_wait_and_tally(channel: discord.TextChannel):
     """WARNING: channel MUST BE UP TO DATE, YOU MAY NEED TO REFRESH THE STATE WITH `SERVER.fetch_channel`"""
     state: list[str] = channel.topic.splitlines()
-    end_time = datetime.fromtimestamp(int(state[4]))
+    # state = [
+    #   ignore,
+    #   startreasonraw,
+    #   stegstate,
+    #   steginitialmessageid,
+    #   stegendtime,
+    #   stegfinalmessageid
+    #]
+    # Get the end time
+    end_timestamp = conv_to_steg_topic_rev(state[4])
+    logger.debug("Got end timestamp %s", end_timestamp)
+    end_time = datetime.fromtimestamp(int(end_timestamp))
     if not end_time:
-        return "Could not get end time from " + state[4]
-    await channel.send(end_time)
+        await channel.delete(reason="Unable to decode the end time from the channel topic. Did you manually modify it?")
+        logger.error("Unable to decode the end time from the channel topic. Did you manually modify it?")
+        return "Could not get/decode end time"
+    end_time = datetime.now() # FIXME: TEST ONLY, REMOVE IN PROD
+    # Wait until the end and try to be accurate, negative values continue instantly anyway
+    await asyncio.sleep((end_time - datetime.now()).total_seconds() - 15)
+    # Wait a little longer
+    await asyncio.sleep((end_time - datetime.now()).total_seconds() - 10)
+    # Send final call
+    fmsg = await channel.send("Vote ends in 10 seconds")
+    await asyncio.sleep(5)
+    await fmsg.edit("Vote ends in 5 seconds")
+    await asyncio.sleep(5)
+    await fmsg.edit("Tallying votes...") # Technically someone can react to a message while it is being fetched and get an extra vote in
+    # Get the initial and final messages
+    initial = await channel.fetch_message(conv_to_steg_topic_rev(state[3]))
+    last = await channel.fetch_message(conv_to_steg_topic_rev(state[5]))
+    # Get the votes
+    vote_dict: dict[int, list[discord.Member]] = {} # i know this is a weird way of storing this
+    async for usr_msg in channel.history(limit=500, oldest_first=True, after=initial, before=last): # if you have more than 100 people eligible to be voted in, you should already be finding another bot
+        if not usr_msg.author.id == bot.user.id:
+            logger.warning("%s was able to send a message during election init", usr_msg.author.name)
+        # Get the user being voted on
+        user = usr_msg.mentions[0]
+        # Get the number of votes that were cast for a person
+        votes = 0
+        for reaction in usr_msg.reactions: # why cant this be a dict :sob:
+            if reaction.emoji == "✅":
+                # We only manually go through the list to validate who has voted
+                async for reactor in reaction.users():
+                    if reactor.bot:
+                        continue
+                    if user.id == reactor.id:
+                        logger.debug("%s voted for themselves", user.name)
+                        continue
+                    votes += 1
+        # Save it to the dict
+        if votes in vote_dict:
+            vote_dict[votes].append(user)
+        else:
+            vote_dict[votes] = [user]
+    # Check if any votes were cast
+    has_cast = any(vote_dict) # provided keys are all ints (if they arent something has gone very wrong), this should work
+    if not has_cast:
+        # No votes were cast, keep the current leader and vice-leader
+        await channel.send("No votes were cast")
+        # TODO: add overthrow logic here once finished
+        return
+    # Delete the messages # TODO: if the bot crashes here it cannot recover after it gets back
+    await channel.purge(reason="Vote has concluded", before=fmsg, limit=500)
+    await channel.purge(reason="Vote has concluded", after=fmsg, limit=1000)
+    # Remove leader and vice-leader
+    nleader = await SERVER.fetch_role(LEADER_ROLE.id)
+    nvice = await SERVER.fetch_role(VICE_ROLE.id)
+    for cleader in nleader.members:
+        await cleader.remove_roles(nleader, reason="Election concluded!")
+    for cvice in nvice.members:
+        await cvice.remove_roles(nvice, reason="Election concluded!")
+    # Get a sorted version
+    sorted_vote_values = sorted(vote_dict.keys())
+    # Set up the result embed
+    res_embed = discord.Embed(
+        color=discord.Color.blurple(),
+        title="Results",
+        description="The election has concluded"
+    )
+    # Show the embed
+    await fmsg.edit(content=None, embed=res_embed)
+    # Suspense...
+    await asyncio.sleep(5)
+    # Show placements one by one
+    res_list = []
+    if len(sorted_vote_values) >= 3:
+        # Set the placement embed field
+        res_list.insert(0, discord.EmbedField(name="3rd place",
+            value=f"{str(sorted_vote_values[-3])} vote{'s' if sorted_vote_values[-3] != 1 else ''}\n" + "\n".join(m.mention for m in vote_dict[sorted_vote_values[-3]])
+        ))
+        # Replace the existing fields
+        res_embed.fields = res_list
+        # Set color to bronze ish
+        res_embed.color = discord.Color.dark_orange()
+        # Add to the message
+        await fmsg.edit(embed=res_embed)
+        # More suspense...
+        await asyncio.sleep(5)
+    if len(sorted_vote_values) >= 2:
+        # Set the placement embed field
+        res_list.insert(0, discord.EmbedField(name="2nd place",
+            value=f"{str(sorted_vote_values[-2])} vote{'s' if sorted_vote_values[-2] != 1 else ''}\n" + "\n".join(m.mention for m in vote_dict[sorted_vote_values[-2]])
+        ))
+        # Replace the existing fields
+        res_embed.fields = res_list
+        # Set color to silver ish
+        res_embed.color = discord.Color.light_grey()
+        # Add to the message
+        await fmsg.edit(embed=res_embed)
+        # More suspense...
+        await asyncio.sleep(5)
+    # Same things as above
+    res_list.insert(0, discord.EmbedField(name="1st place",
+        value=f"{str(sorted_vote_values[-1])} vote{'s' if sorted_vote_values[-1] != 1 else ''}\n" + "\n".join(m.mention for m in vote_dict[sorted_vote_values[-1]])
+    ))
+    res_embed.fields = res_list
+    # Set color to gold ish
+    res_embed.color = discord.Color.yellow()
+    # Show final list
+    await fmsg.edit(embed=res_embed)
+    await asyncio.sleep(1)
+    # Get new leader if there more than one person won
+    eligible_list = vote_dict[sorted_vote_values[-1]]
+    new_leader = None
+    if len(eligible_list) == 1:
+        new_leader = eligible_list[0]
+    else:
+        # "Spin a wheel" (random.choice)
+        new_leader = random.choice(eligible_list)
+    # Announce and ping
+    await channel.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!") # TODO: Send another message when vice-leader selection is added
+    # Give the person the leader role
+    await new_leader.add_roles(nleader, reason="Election finished!")
+    # TODO: Refactor into new function for overthrow
+    await asyncio.sleep(3600)
+    await channel.delete(reason="Election concluded")
 
 # Commands
 
