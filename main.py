@@ -329,7 +329,7 @@ async def restore_election_state(channel: discord.TextChannel):
         # Give the person the leader role
         await new_leader.add_roles(LEADER_ROLE, reason="Election finished!")
         # Log
-        await admin_log(discord.Embed(color=discord.Color.red(), title="Election restore attempted", description=f"Warning: restoring from state 2 can be buggy. You may need to manually verify roles. {new_leader.mention} should have been given {LEADER_ROLE.mention}"))
+        await admin_log(discord.Embed(color=discord.Color.yellow(), title="Election restore attempted", description=f"{new_leader.mention} has been given {LEADER_ROLE.mention}"))
         # Change to state 3
         cs = cs[:3]
         cs[2] = conv_to_steg_topic(3)
