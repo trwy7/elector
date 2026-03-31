@@ -57,7 +57,7 @@ features:
     vice-leader: true # TODO: implement
     # Force a vice leader to be picked
     # If this is on and the leader does not pick a vice leader, their leader role will be revoked
-    force_vice: true # TODO: implement
+    force_vice: true
   kick:
     # Disable kicking members during leader votes
     disable_on_election: true # TODO: implement

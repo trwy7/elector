@@ -138,7 +138,7 @@ async def on_ready():
     init_complete = True
 
     # Make sure the steg dict is all functional
-    # Commented for release
+    # Commented for release because rate limits
     # temp_testc = await VOTE_CATEGORY.create_text_channel("init-test-channel",
     #     topic="!" + conv_to_steg_topic(1234567890),
     #     reason="Testing steg",
