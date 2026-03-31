@@ -509,7 +509,8 @@ async def election_wait_and_tally(channel: discord.TextChannel):
         # "Spin a wheel" (random.choice)
         new_leader = random.choice(eligible_list)
     # Announce and ping
-    await channel.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!") # TODO: Send another message when vice-leader selection is added
+    await channel.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!") # TODO: Send another message here when vice-leader selection is added
+    await ANNOUNCE_CHANNEL.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!")
     # Give the person the leader role
     await new_leader.add_roles(nleader, reason="Election finished!")
     # TODO: Refactor into new function for overthrow
