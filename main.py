@@ -1261,7 +1261,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     channel = bot.get_channel(payload.channel_id) # Check cache
     if not channel:
         channel = SERVER.fetch_channel(payload.channel_id)
-    mesasge: discord.Message = bot.get_message(payload.message_id)
+    message: discord.Message = bot.get_message(payload.message_id)
     if not message:
         message = await channel.fetch_message(payload.message_id) # reminder: bot.get_message uses the cache, we cannot use the cache here
     # warning: whole lotta nesting ahead
