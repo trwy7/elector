@@ -36,7 +36,16 @@ roles:
 features:
   leader:
     # Have people vote for leader every saturday
-    elections: true # TODO: implement
+    scheduled_elections: true # TODO: implement
+    # Scheduled election start day of week
+    # Can be mon,tue,wed,thu,fri,sat,sun
+    election_day: "sat"
+    # Scheduled election start hour (0-23), remember to set the server/container timezone for this to be correct
+    election_hour: 7
+    # Default election end hour (0-23)
+    # The bot will attempt to hit this hour to end the election no matter the start reason
+    # It can either be the set hour, 5 hours after the set hour, or the set hour but next day
+    election_end: 16
     # Start the vote again when the leader leaves
     elect_on_leave: true # TODO: implement
     # Let people overthrow the leader

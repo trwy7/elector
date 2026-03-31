@@ -13,6 +13,7 @@ import discord
 from discord.commands import option
 from discord.ext import commands, tasks # i dislike commands.cooldown, but i don't know any other simple way to do rate limits
 from uwuipy import Uwuipy
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # Logging
 logging.basicConfig(level=logging.WARNING)
@@ -55,6 +56,8 @@ uwulib = Uwuipy(
     None,
     action_chance=0
 )
+
+scheduler = AsyncIOScheduler()
 
 # Global vars
 
@@ -150,6 +153,7 @@ async def on_ready():
     if found_lv:
         await restore_election_state(found_lv) # TODO: after development, move after sync_commands
     await bot.sync_commands()
+    scheduler.start()
 
 # Functions
 
@@ -338,6 +342,7 @@ async def restore_election_state(channel: discord.TextChannel):
     elif state == 3:
         await election_cleanup(channel)
 
+@scheduler.scheduled_job('cron', day_of_week=config['features']['leader']['election_day'], hour=config['features']['leader']['election_hour'])
 async def election_start(reason: str=""):
     """Start an election, This function may take multiple hours to run.
 
@@ -387,7 +392,7 @@ async def election_start(reason: str=""):
         return "Nobody is eligible to be elected"
     # Calculate end time
     current_time = datetime.now()
-    target_time = current_time.replace(hour=16, minute=0, second=0, microsecond=0) # Force end at 4 PM
+    target_time = current_time.replace(hour=config['features']['leader']['election_end'], minute=0, second=0, microsecond=0) # Force end at 4 PM (default)
     if current_time > target_time:
         logger.debug("Vote started too late in the day, setting end to next day")
         target_time += timedelta(days=1)
