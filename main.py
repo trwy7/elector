@@ -1443,7 +1443,6 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                                 await election_start(f"{m.mention} has been overthrown!")
                         else:
                             await message.channel.send("Could not find the current leader")
-                            await ANNOUNCE_CHANNEL.send("Could not find the current leader")
                             await admin_log(
                                 discord.Embed(
                                     color=discord.Color.dark_red(),
