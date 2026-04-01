@@ -1468,7 +1468,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                             await asyncio.sleep(120)
                             await message.channel.delete(reason="Vote passed!")
                             if config['features']['leader']['overthrow']:
-                                await election_start(f"{m.mention} has been overthrown!")
+                                await election_start(f"{LEADER_ROLE.mention} has been overthrown!")
 
 arlist: list[tuple[re.Pattern, str, bool]] = [
     (re.compile(s['match']), s['send'], s['delete'])
