@@ -63,7 +63,7 @@ features:
     force_vice: true
   kick:
     # Disable kicking members during leader votes
-    disable_on_election: true # TODO: implement
+    disable_on_election: true
     votekick:
       # Let people kick other members by a vote
       enabled: true
@@ -95,8 +95,10 @@ features:
     rename_roles: false
   plusvote:
     # Allow people to be voted into the plus role
-    # Always disabled during leader votes # TODO: implement
     enabled: true
+    # Disable promoting members during leader votes
+    # If your plus role has election vote perms, you should leave this on
+    disable_during_election: true
     # Required amount of votes
     required_votes: 5
     # Required amount of time in the server to be eligible, in hours
