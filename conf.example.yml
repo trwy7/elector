@@ -48,6 +48,7 @@ features:
     # It can either be the set hour, 5 hours after the set hour, or the set hour but next day
     election_end: 16
     # Start the vote again when the leader leaves
+    # Should work most of the time, but sometimes you may need to run <command> # TODO: Fill in the command
     elect_on_leave: true # TODO: implement
     # Let people overthrow the leader
     # Set the number of votes needed, 0 to disable

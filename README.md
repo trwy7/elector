@@ -52,3 +52,7 @@ A lot of configuration requires you to input a user/role/channel id, you can get
   - /guest_role: `guest` role
 
 There is a lot of configuration, you should scroll through and read what everything does and configure what you do not like! Remember to fill out the token value! You should also fill out the VIP list with important people.
+
+### Finalizing
+
+The bot assumes you do not have administrator, so give server ownership to an alt account, and remove all it's roles (including guest). Now, invite everyone you want! Feel free to make an issue if there are any features you want or bugs you find.
