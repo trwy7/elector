@@ -323,7 +323,7 @@ async def restore_election_state(channel: discord.TextChannel):
             await channel.delete(reason="Restore failed: New leader not found")
             return
         # Announce and ping
-        await channel.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!") # TODO: Send another message here when vice-leader selection is added
+        await channel.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!")
         await ANNOUNCE_CHANNEL.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!")
         # Give the person the leader role
         await new_leader.add_roles(LEADER_ROLE, reason="Election finished!")
@@ -335,6 +335,12 @@ async def restore_election_state(channel: discord.TextChannel):
         cs.append(conv_to_steg_topic(round(datetime.now().timestamp())))
         # Apply new state
         await channel.edit(topic="\n".join(cs), reason="Changing election state")
+        # Reminder to pick a vice leader
+        # Technically if the bot gets knocked offline between the state update and this message it just wont be sent
+        # The actual selection action will still work though
+        # Because this is a restore, someone may already have vice, but I would rather re-send the message than not have it sent at all
+        if config['features']['leader']['vice-leader']:
+            await channel.send(f"The next person you mention in this channel will be given {VICE_ROLE.mention}")
         # Next phase!
         await election_cleanup(channel)
     elif state == 3:
@@ -593,7 +599,7 @@ async def election_wait_and_tally(channel: discord.TextChannel):
     # Purge messages again
     await channel.purge(reason="Vote has concluded", after=fmsg, limit=1000)
     # Announce and ping
-    await channel.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!") # TODO: Send another message here when vice-leader selection is added
+    await channel.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!")
     await ANNOUNCE_CHANNEL.send(f"{new_leader.mention} is the new {LEADER_ROLE.mention}!")
     # Give the person the leader role
     await new_leader.add_roles(nleader, reason="Election finished!")
@@ -603,6 +609,11 @@ async def election_wait_and_tally(channel: discord.TextChannel):
     state.append(conv_to_steg_topic(round(datetime.now().timestamp())))
     # Apply new state
     await channel.edit(topic="\n".join(state), reason="Changing election state")
+    # Reminder to pick a vice leader
+    # Technically if the bot gets knocked offline between the state update and this message it just wont be sent
+    # The actual selection action will still work though
+    if config['features']['leader']['vice-leader']:
+        await channel.send(f"The next person you mention in this channel will be given {VICE_ROLE.mention}")
     # Next phase!
     return await election_cleanup(channel)
 
