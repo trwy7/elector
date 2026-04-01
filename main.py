@@ -1192,11 +1192,36 @@ async def on_member_join(member: discord.Member):
     # Give them vip if on the list
     if member.id in config['vips']:
         await member.add_roles(VIP_ROLE, reason="New VIP member")
-    await admin_log(discord.Embed(color=discord.Color.orange(), title="New member", description=f"{member.mention} joined", fields=[discord.EmbedField("Is VIP", "Yes" if member.id in config['vips'] else "No")], timestamp=datetime.now()))
+    await admin_log(discord.Embed(
+        color=discord.Color.orange(),
+        title="New member",
+        description=f"{member.mention} joined",
+        fields=[
+            discord.EmbedField("Is VIP", "Yes" if member.id in config['vips'] else "No")
+        ]
+    ))
 
 @bot.event
 async def on_raw_member_remove(payload: discord.RawMemberRemoveEvent):
     logger.info("'%s' just left the server", payload.user.name)
+    # Check if it was a leave or kick, there is no built in way, so we check audit log
+    smsg = f"{payload.user.mention} left the server"
+    audit_log: discord.AuditLogEntry = await SERVER.audit_logs(limit=1, action=discord.AuditLogAction.kick).flatten()[0]
+    if audit_log and audit_log.target.id == payload.user.id:
+        # It was a kick
+        smsg = f"{payload.user.mention} was kicked by {audit_log.user}"
+        if audit_log.user.id != bot.user.id:
+            # Assume the bot has already sent a message
+            await ANNOUNCE_CHANNEL.send(smsg)
+    else:
+        # They left, send the message
+        await ANNOUNCE_CHANNEL.send(smsg)
+    # Log it
+    await admin_log(discord.Embed(
+        color=discord.Color.brand_red(),
+        title="User left",
+        description=smsg
+    ))
 
 @bot.event
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
