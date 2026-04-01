@@ -1521,6 +1521,9 @@ async def on_message(message: discord.Message | discord.WebhookMessage):
         # Make sure nobody already has vice
         nvice: discord.Role = await SERVER.get_or_fetch(discord.Role, VICE_ROLE.id)
         if not nvice.members: # TODO: add a Lock
+            if message.mentions[0] == message.author:
+                # Prevent giving self vice, because it screws some permissions
+                await message.channel.send(f"You cannot give yourself {VICE_ROLE.mention}!", reference=discord.MessageReference.from_message(message))
             # Add the role
             await message.mentions[0].add_roles(VICE_ROLE)
             # Announce it
