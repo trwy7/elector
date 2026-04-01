@@ -49,7 +49,7 @@ features:
     election_end: 16
     # Start the vote again when the leader leaves
     # Should work most of the time, but sometimes you may need to run <command> # TODO: Fill in the command
-    elect_on_leave: true # TODO: implement
+    elect_on_leave: true
     # Let people overthrow the leader
     # Set the number of votes needed, 0 to disable
     overthrow: 6

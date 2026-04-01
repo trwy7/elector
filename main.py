@@ -1202,15 +1202,30 @@ async def on_member_join(member: discord.Member):
     ))
 
 @bot.event
+async def on_member_remove(member: discord.Member):
+    logger.debug("A member in cache has left")
+    # Check if the leader left
+    # Sadly I cannot get roles from raw_member_remove, so this could make the leader leaving not trigger a re-election
+    if config['features']['leader']['elect_on_leave']:
+        for role in member.roles:
+            if role.id == LEADER_ROLE.id:
+                # The leader was the one who left, start a re-election
+                # Reminder: Starting an election already creates a log
+                logger.debug("The leader has left.")
+                await election_start(reason=f"{member.mention} has left!") # if we add other functions, remember to move this as to not block them
+
+@bot.event
 async def on_raw_member_remove(payload: discord.RawMemberRemoveEvent):
     logger.info("'%s' just left the server", payload.user.name)
     # Check if it was a leave or kick, there is no built in way, so we check audit log
+    # If someone gets kicked, then readded, then they leave again, this will assume they were kicked, but there is no better way to do this
+    # To combat that issue, I make sure the event was at max 10 seconds ago, but bugs are going to happen
     smsg = f"{payload.user.mention} left the server"
-    audit_log: discord.AuditLogEntry = await SERVER.audit_logs(limit=1, action=discord.AuditLogAction.kick).flatten()[0]
-    if audit_log and audit_log.target.id == payload.user.id:
+    audit_log: discord.AuditLogEntry = (await SERVER.audit_logs(limit=1, action=discord.AuditLogAction.kick, after=datetime.now() - timedelta(seconds=10)).flatten())
+    if audit_log and audit_log[0].target.id == payload.user.id:
         # It was a kick
-        smsg = f"{payload.user.mention} was kicked by {audit_log.user}"
-        if audit_log.user.id != bot.user.id:
+        smsg = f"{payload.user.mention} was kicked by {audit_log[0].user.mention}"
+        if audit_log[0].user.id != bot.user.id:
             # Assume the bot has already sent a message
             await ANNOUNCE_CHANNEL.send(smsg)
     else:
