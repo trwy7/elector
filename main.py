@@ -631,6 +631,11 @@ async def election_cleanup(channel: discord.TextChannel):
             for m in rleader.members:
                 await m.remove_roles(rleader, reason="No vice chosen")
             await channel.send(f"No {VICE_ROLE.mention} was chosen")
+            await admin_log(discord.Embed(
+                color=discord.Color.red(),
+                title="Leader revoked",
+                description="The leader failed to pick a vice in time."
+            ))
             leader_revoked = True
             await asyncio.sleep(300) # TODO: conf option to also start a re-election
 
