@@ -1,5 +1,5 @@
 services:
-  friend-elector:
+  electoric:
     build:
       context: .
     environment:

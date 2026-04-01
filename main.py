@@ -247,23 +247,16 @@ def replace_line(string: str, replace: str, line: int):
     nstring = string.splitlines()
     nstring[line] = replace
     return "\n".join(nstring)
-# STEG_DICT = {
-#     "1": "᠋",
-#     "2": "",
-#     "3": " ",
-#     "4": " ",
-#     "5": "­",
-#     "6": "͏",
-#     "7": "؜",
-#     "8": "឴",
-#     "9": "឵",
-#     "0": "	"
-# }
+
+## Steg for hiding binary into a discord channel topic
+## I was too lazy to store data in a dict and somehow i thought this was better
+
 STEGV_OFF = " "
 STEGV_ON = "؜"
 
 def conv_to_steg_topic(original: int) -> str:
     return "_" + bin(original)[2:].replace("0", STEGV_OFF).replace("1", STEGV_ON) + "_"
+
 def conv_to_steg_topic_rev(original: str) -> int:
     return int(original.replace(STEGV_OFF, "0").replace(STEGV_ON, "1").removeprefix("_").removesuffix("_"), 2)
 

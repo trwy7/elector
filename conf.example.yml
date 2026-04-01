@@ -75,6 +75,7 @@ features:
       cooldown: 21600
     forcekick:
       # Let people kick others
+      # This is better than granting kick members role permission because you can set a cooldown
       # Check permissions for fine control
       enabled: true
       # How many times a person can forcekick
