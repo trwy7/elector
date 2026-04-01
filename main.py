@@ -1461,9 +1461,9 @@ arlist: list[tuple[re.Pattern, str, bool]] = [
 ]
 
 @bot.event
-async def on_message(message: discord.Message):
+async def on_message(message: discord.Message | discord.WebhookMessage):
     if isinstance(message.channel, discord.DMChannel):
-        return # guild only!
+        return # server only!
     logger.debug("New message from '%s' in %s", message.author.name, message.channel.name)
     if message.author.bot:
         return
@@ -1473,7 +1473,7 @@ async def on_message(message: discord.Message):
         if re.fullmatch(ar[0], message.content):
             # It matches!
             logger.info("Sending autoreply: %s", ar[1])
-            # If we are going to delete the message, do not reply to it
+            # If we are going to delete the message, do not reply to it # TODO: if uwuify is enabled, reply to the right message
             sr = {"reference": message} if not ar[2] else {}
             # Send our reply
             await message.channel.send(ar[1], **sr)
@@ -1496,11 +1496,27 @@ async def on_message(message: discord.Message):
                     break
             if not uwu_hook:
                 uwu_hook = await message.channel.create_webhook(name="uwu", reason="UwUify used and no webhook available")
-            await uwu_hook.send(content=uwulib.uwuify(message.content), username=message.author.display_name, avatar_url=message.author.avatar.url)
+            message = await uwu_hook.send(content=uwulib.uwuify(message.content), username=message.author.display_name, avatar_url=message.author.avatar.url, wait=True)
             await message.delete(reason="UwUified")
-            return # the message doesnt exist anymore, we should not continue
+            # return # the message doesnt exist anymore, we should not continue
         # Time is up, remove them from the dict
         uwuified.pop(message.author.id)
+    # Vice leader selection
+    if config['features']['leader']['vice-leader'] and message.channel.name == "election" and len(message.mentions) == 1 and conv_to_steg_topic_rev(message.channel.topic.splitlines()[2]) == 3 and LEADER_ROLE.id in get_user_roles(message.author):
+        # Make sure nobody already has vice
+        nvice: discord.Role = await SERVER.get_or_fetch(discord.Role, VICE_ROLE.id)
+        if not nvice.members: # TODO: add a Lock
+            # Add the role
+            await message.mentions[0].add_roles(VICE_ROLE)
+            # Announce it
+            await message.channel.send(f"{message.mentions[0]} has been given {VICE_ROLE.mention}!", reference=discord.MessageReference.from_message(message))
+            await ANNOUNCE_CHANNEL.send(f"{message.mentions[0]} is the new {VICE_ROLE.mention}")
+            # Log it
+            await admin_log(discord.Embed(
+                color=discord.Color.orange(),
+                title="Vice leader chosen",
+                description=f"{message.mentions[0]} has been given {VICE_ROLE.mention} by {message.author.mention}"
+            ))
 
 # Errors
 
