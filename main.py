@@ -1524,6 +1524,9 @@ async def on_message(message: discord.Message | discord.WebhookMessage):
             if message.mentions[0] == message.author:
                 # Prevent giving self vice, because it screws some permissions
                 await message.channel.send(f"You cannot give yourself {VICE_ROLE.mention}!", reference=discord.MessageReference.from_message(message))
+            if message.mentions[0].bot:
+                # Prevent giving self vice, because it screws some permissions
+                await message.channel.send(f"You cannot give a bot {VICE_ROLE.mention}!", reference=discord.MessageReference.from_message(message))
             # Add the role
             await message.mentions[0].add_roles(VICE_ROLE)
             # Announce it
