@@ -633,7 +633,7 @@ async def election_cleanup(channel: discord.TextChannel):
         end_time = ended_at + timedelta(hours=12) # TODO: add to config
     else:
         end_time = ended_at + timedelta(hours=1)
-    end_time = ended_at + timedelta(seconds=10) # FIXME: TEST ONLY, ALSO TO BE REMOVED
+    end_time = datetime.now() + timedelta(seconds=15) # FIXME: TEST ONLY, ALSO TO BE REMOVED
     await asyncio.sleep((end_time - datetime.now()).total_seconds())
     leader_revoked = False
     if config['features']['leader']['vice-leader'] and config['features']['leader']['force_vice']:
@@ -650,8 +650,8 @@ async def election_cleanup(channel: discord.TextChannel):
                     title="Leader revoked",
                     description="The leader failed to pick a vice in time."
                 ))
-                leader_revoked = True
                 await asyncio.sleep(300) # TODO: conf option to also start a re-election
+            leader_revoked = True
 
     if config['features']['leader']['overthrow'] and not leader_revoked:
         await init_overthrow()
