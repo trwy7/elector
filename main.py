@@ -1510,13 +1510,13 @@ async def on_message(message: discord.Message | discord.WebhookMessage):
             # Add the role
             await message.mentions[0].add_roles(VICE_ROLE)
             # Announce it
-            await message.channel.send(f"{message.mentions[0]} has been given {VICE_ROLE.mention}!", reference=discord.MessageReference.from_message(message))
-            await ANNOUNCE_CHANNEL.send(f"{message.mentions[0]} is the new {VICE_ROLE.mention}")
+            await message.channel.send(f"{message.mentions[0].mention} has been given {VICE_ROLE.mention}!", reference=discord.MessageReference.from_message(message))
+            await ANNOUNCE_CHANNEL.send(f"{message.mentions[0].mention} is the new {VICE_ROLE.mention}")
             # Log it
             await admin_log(discord.Embed(
                 color=discord.Color.orange(),
                 title="Vice leader chosen",
-                description=f"{message.mentions[0]} has been given {VICE_ROLE.mention} by {message.author.mention}"
+                description=f"{message.mentions[0].mention} has been given {VICE_ROLE.mention} by {message.author.mention}"
             ))
 
 # Errors
