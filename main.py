@@ -212,6 +212,7 @@ async def public_log(embed: discord.Embed):
     await ANNOUNCE_CHANNEL.send(embed=embed)
 
 async def admin_log(embed: discord.Embed):
+    embed.timestamp = datetime.now()
     await LOG_CHANNEL.send(embed=embed)
 
 def set_vote_channel_perms(privacy: int, by=None, to=None):
@@ -1527,7 +1528,7 @@ async def on_message(message: discord.Message | discord.WebhookMessage):
             await admin_log(discord.Embed(
                 color=discord.Color.orange(),
                 title="Vice leader chosen",
-                description=f"{message.mentions[0].mention} has been given {VICE_ROLE.mention} by {message.author.mention}"
+                description=f"{message.author.mention} has given {message.mentions[0].mention} the {VICE_ROLE.mention} role"
             ))
 
 # Errors
