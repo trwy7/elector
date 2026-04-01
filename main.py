@@ -1371,25 +1371,41 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                         nleader = SERVER.get_role(LEADER_ROLE.id)
                         if not nleader:
                             nleader = await SERVER.fetch_role(LEADER_ROLE.id)
+                        m = None
                         for m in nleader.members:
                             if config['features']['leader']['overthrow_kick']:
                                 await m.kick(reason="Overthrown")
                             else:
                                 await m.remove_roles(nleader, reason="Overthrown")
-                        await message.channel.send(f"{m.mention} has been overthrown!")
-                        await ANNOUNCE_CHANNEL.send(f"{m.mention} has been overthrown!")
-                        await admin_log(
-                            discord.Embed(
-                                color=discord.Color.dark_teal(),
-                                title="Leader overthrown",
-                                description=f"{LEADER_ROLE.mention} ({m.mention}) has been overthrown"
+                        if m:
+                            await message.channel.send(f"{m.mention} has been overthrown!")
+                            await ANNOUNCE_CHANNEL.send(f"{m.mention} has been overthrown!")
+                            await admin_log(
+                                discord.Embed(
+                                    color=discord.Color.dark_teal(),
+                                    title="Leader overthrown",
+                                    description=f"{LEADER_ROLE.mention} ({m.mention}) has been overthrown"
+                                )
                             )
-                        )
-                        await message.channel.edit(topic=f"! {m.mention} has been overthrown!")
-                        await asyncio.sleep(120)
-                        await message.channel.delete(reason="Vote passed!")
-                        if config['features']['leader']['overthrow']:
-                            await election_start(f"{m.mention} has been overthrown!")
+                            await message.channel.edit(topic=f"! {m.mention} has been overthrown!")
+                            await asyncio.sleep(120)
+                            await message.channel.delete(reason="Vote passed!")
+                            if config['features']['leader']['overthrow']:
+                                await election_start(f"{m.mention} has been overthrown!")
+                        else:
+                            await message.channel.send("Could not find the current leader")
+                            await ANNOUNCE_CHANNEL.send("Could not find the current leader")
+                            await admin_log(
+                                discord.Embed(
+                                    color=discord.Color.dark_red(),
+                                    title="Leader overthrown with error",
+                                    description=f"{LEADER_ROLE.mention} was overthrown, but no user was found. Did they leave?"
+                                )
+                            )
+                            await message.channel.edit(topic="! Could not find the current leader")
+                            await asyncio.sleep(120)
+                            await message.channel.delete(reason="Vote passed!")
+
 arlist: list[tuple[re.Pattern, str, bool]] = [
     (re.compile(s['match']), s['send'], s['delete'])
     for s in config['features']['fun']['autoreply']
