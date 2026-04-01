@@ -58,7 +58,7 @@ features:
     # When the leader is overthrown, should a new election start?
     overthrow_election: true
     # Let the leader pick a vice leader after they are elected
-    vice-leader: true # TODO: implement
+    vice-leader: true
     # Force a vice leader to be picked
     # If this is on and the leader does not pick a vice leader, their leader role will be revoked
     force_vice: true
