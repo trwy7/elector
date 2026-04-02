@@ -641,7 +641,7 @@ async def election_cleanup(channel: discord.TextChannel):
             end_time += timedelta(hours=2)
     else:
         end_time = ended_at + timedelta(hours=1)
-    logger.debug("Final election deletion date: %s" str(end_time))
+    logger.debug("Final election deletion date: %s", str(end_time))
     end_time = datetime.now() + timedelta(seconds=30) # FIXME: TEST ONLY, ALSO TO BE REMOVED
     await asyncio.sleep((end_time - datetime.now()).total_seconds())
     leader_revoked = False
