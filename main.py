@@ -449,7 +449,7 @@ async def election_wait_and_tally(channel: discord.TextChannel):
         await channel.delete(reason="Unable to decode the end time from the channel topic. Did you manually modify it?")
         logger.error("Unable to decode the end time from the channel topic. Did you manually modify it?")
         return "Could not get/decode end time"
-    end_time = datetime.now() + timedelta(seconds=5) # FIXME: TEST ONLY, REMOVE IN PROD
+    end_time = datetime.now() + timedelta(seconds=20) # FIXME: TEST ONLY, REMOVE IN PROD
     # Wait until the end and try to be accurate, negative values continue instantly anyway
     await asyncio.sleep((end_time - datetime.now()).total_seconds() - 15)
     # Wait a little longer
@@ -630,10 +630,19 @@ async def election_cleanup(channel: discord.TextChannel):
     ended_at = datetime.fromtimestamp(conv_to_steg_topic_rev(state[3]))
     if config['features']['leader']['vice-leader']:
         # Give them enough time to pick a vice leader
-        end_time = ended_at + timedelta(hours=12) # TODO: add to config
+        end_time = ended_at + timedelta(hours=12) # TODO: add to config, probably just refactor this whole thing
+        # Make sure they have enough time
+        if end_time < datetime.now():
+            # The bot started too late, roll it back
+            end_time = datetime.now()
+        if (end_time - datetime.now()) < timedelta(hours=2):
+            # The bot started too close to the end
+            # During the two hour period, the bot owner should remind the leader to pick a vice because the bot is up again
+            end_time += timedelta(hours=2)
     else:
         end_time = ended_at + timedelta(hours=1)
-    end_time = datetime.now() + timedelta(seconds=15) # FIXME: TEST ONLY, ALSO TO BE REMOVED
+    logger.debug("Final election deletion date: %s" str(end_time))
+    end_time = datetime.now() + timedelta(seconds=30) # FIXME: TEST ONLY, ALSO TO BE REMOVED
     await asyncio.sleep((end_time - datetime.now()).total_seconds())
     leader_revoked = False
     if config['features']['leader']['vice-leader'] and config['features']['leader']['force_vice']:
