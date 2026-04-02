@@ -65,6 +65,8 @@ features:
     # Force a vice leader to be picked
     # If this is on and the leader does not pick a vice leader, their leader role will be revoked
     force_vice: true
+    # If the leader fails to pick a vice-leader, should the election be restarted?
+    force_vice_restart: true
   kick:
     # Disable kicking members during leader votes
     disable_on_election: true

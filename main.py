@@ -641,24 +641,33 @@ async def election_cleanup(channel: discord.TextChannel):
         end_time = ended_at + timedelta(hours=1)
     logger.debug("Final election deletion date: %s", str(end_time))
     end_time = datetime.now() + timedelta(seconds=30) # FIXME: TEST ONLY, ALSO TO BE REMOVED
+    # Wait until the moment
     await asyncio.sleep((end_time - datetime.now()).total_seconds())
+    # Check if a vice-leader was picked
     leader_revoked = False
     if config['features']['leader']['vice-leader'] and config['features']['leader']['force_vice']:
         rvice = await SERVER.fetch_role(VICE_ROLE.id)
         if len(rvice.members) == 0:
             rleader = await SERVER.fetch_role(LEADER_ROLE.id)
+            # Check if the leader is still here and remove permissions
             m = None
             for m in rleader.members:
                 await m.remove_roles(rleader, reason="No vice chosen")
             if m:
+                # Announce the perms were removed
                 await channel.send(f"No {VICE_ROLE.mention} was chosen")
                 await admin_log(discord.Embed(
                     color=discord.Color.red(),
                     title="Leader revoked",
                     description="The leader failed to pick a vice in time."
                 ))
-                await asyncio.sleep(300) # TODO: conf option to also start a re-election
+                await asyncio.sleep(300)
+                if config['features']['leader']['force_vice_restart']:
+                    await channel.delete(reason="Leader failed to pick a vice")
+                    return await election_start(reason=f"{m.mention} did not pick a {VICE_ROLE.mention}")
             leader_revoked = True
+
+    # Start the overthrow vote
 
     if config['features']['leader']['overthrow'] and not leader_revoked:
         await init_overthrow()
