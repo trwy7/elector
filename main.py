@@ -18,7 +18,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 # Logging
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger("elector")
-logger.level = logging.DEBUG
+logger.level = logging.INFO
 
 # App config
 def validate_conf(source: dict, against: dict, path: str="/"):
