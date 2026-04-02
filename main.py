@@ -830,19 +830,6 @@ if config['features']['voice_rooms']['enabled']:
                     stream=can_stream,
                     set_voice_channel_status=False,
                     start_embedded_activities=can_play
-                ),
-                interaction.user: discord.PermissionOverwrite(
-                    view_channel=True,
-                    send_messages=True,
-                    connect=True,
-                    priority_speaker=True,
-                    mute_members=True,
-                    deafen_members=True,
-                    move_members=True,
-                    speak=True,
-                    stream=True,
-                    start_embedded_activities=True,
-                    manage_permissions=config['features']['voice_rooms']['allow_perm_change']
                 )
             }
             if priv == 0:
@@ -1057,17 +1044,17 @@ if config['features']['voice_rooms']['enabled']:
                         min_values=0,
                         max_values=25
                     ),
-                    description="People to ban from your VC. If they are currently in your vc, they will not be kicked, right click them and click \"Disconnect\"."
+                    description="People to ban. You may need to kick them by right clicking them and then clicking \"Disconnect\""
                 ),
                 discord.ui.Label(
                     "Features",
                     discord.ui.Select(
                         placeholder="Select what people can do",
                         options=[
-                            discord.SelectOption(label="Voice", value="voice", emoji="📞", default=channel.permissions_for(SERVER.default_role).speak),
+                            discord.SelectOption(label="Voice", value="voice", emoji="📞", default=channel.overwrites[SERVER.default_role].speak),
                             discord.SelectOption(label="Text", value="text", emoji="💬", default=channel.permissions_for(LEVEL_ROLE_MAP[opriv]).send_messages if opriv < 4 else True), # This is a best guess system
-                            discord.SelectOption(label="Video", value="video", emoji="📺", default=channel.permissions_for(SERVER.default_role).stream),
-                            discord.SelectOption(label="Activities", value="play", emoji="🎮", default=channel.permissions_for(SERVER.default_role).start_embedded_activities)
+                            discord.SelectOption(label="Video", value="video", emoji="📺", default=channel.overwrites[SERVER.default_role].stream),
+                            discord.SelectOption(label="Activities", value="play", emoji="🎮", default=channel.overwrites[SERVER.default_role].start_embedded_activities)
                         ],
                         required=False,
                         min_values=0,
@@ -1079,6 +1066,7 @@ if config['features']['voice_rooms']['enabled']:
                     "Max people",
                     discord.ui.InputText(
                         placeholder="Unlimited",
+                        value=str(channel.user_limit),
                         max_length=2,
                         min_length=0,
                         required=False
@@ -1133,18 +1121,18 @@ if config['features']['voice_rooms']['enabled']:
             for bp in banned_people:
                 perms[bp] = discord.PermissionOverwrite(view_channel=True, connect=False)
             perms[interaction.user] = discord.PermissionOverwrite(
-                    view_channel=True,
-                    send_messages=True,
-                    connect=True,
-                    priority_speaker=True,
-                    mute_members=True,
-                    deafen_members=True,
-                    move_members=True,
-                    speak=True,
-                    stream=True,
-                    start_embedded_activities=True,
-                    manage_permissions=config['features']['voice_rooms']['allow_perm_change']
-                )
+                view_channel=True,
+                send_messages=True,
+                connect=True,
+                priority_speaker=True,
+                mute_members=True,
+                deafen_members=True,
+                move_members=True,
+                speak=True,
+                stream=True,
+                start_embedded_activities=True,
+                manage_permissions=config['features']['voice_rooms']['allow_perm_change']
+            )
             # Edit the channel
             await self.ochannel.edit(
                 name=name,
@@ -1158,7 +1146,7 @@ if config['features']['voice_rooms']['enabled']:
     @discord.guild_only()
     @require_own_vc
     async def vc_modify_cmd(ctx: discord.ApplicationContext):
-        pass
+        await ctx.send_modal(ModifyVCModal(ctx.user.voice.channel))
 
 ## Kicking
 
