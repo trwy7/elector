@@ -417,8 +417,10 @@ async def election_start(reason: str=""):
     new_topic = replace_line(new_topic, conv_to_steg_topic(1), 2)
     # Save the state and unlock the channel
     await votec.edit(overwrites=set_vote_channel_perms(config['permissions']['allow_leader_vote']), topic=new_topic, reason="Unlocking vote channel")
-    await asyncio.sleep(1) # Just in case discord does not automatically update
-    await votec.send("@everyone ^") # TODO: add into config
+    # Send custom message
+    if config['features']['leader']['election_msg']:
+        await asyncio.sleep(1) # Just in case discord does not automatically update permissions
+        await votec.send(config['features']['leader']['election_msg'])
     await admin_log(discord.Embed(
         color=discord.Color.yellow(),
         title="Election",
