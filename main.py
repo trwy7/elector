@@ -894,7 +894,7 @@ if config['features']['voice_rooms']['enabled']:
             if cvc == ctx.user.id:
                 owned += 1
                 if owned >= maxr:
-                    await ctx.respond(f"You can only have {str(maxr)} room" + ('' if maxr == 1 else 's'))
+                    await ctx.respond(f"You can only have {str(maxr)} room" + ('' if maxr == 1 else 's'), ephemeral=True)
                     return
         # Check who the user can lock their room to
         pvalid = []
