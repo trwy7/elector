@@ -693,7 +693,7 @@ async def init_overthrow():
 
 ## Start election
 
-@bot.slash_command(name="startelection", description="Run a new election") # TODO: Expand this command into one that can be used by the leader
+@bot.slash_command(name="startelection", description="Run a new election")
 @discord.guild_only()
 async def start_elect_cmd(ctx: discord.ApplicationContext):
     pl = await get_user_perm_level(ctx.user)
@@ -1674,7 +1674,7 @@ async def on_message(message: discord.Message | discord.WebhookMessage):
         if re.fullmatch(ar[0], message.content):
             # It matches!
             logger.info("Sending autoreply: %s", ar[1])
-            # If we are going to delete the message, do not reply to it # TODO: if uwuify is enabled, reply to the right message
+            # If we are going to delete the message, do not reply to it
             sr = {"reference": message} if not ar[2] else {}
             # Send our reply
             await message.channel.send(ar[1], **sr)
