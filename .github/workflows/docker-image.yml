@@ -10,6 +10,11 @@ on:
   push:
     branches:
       - main
+    paths:
+      - main.py
+      - Dockerfile
+      - .dockerignore
+      - requirements.txt
 
 jobs:
   docker_publish:
