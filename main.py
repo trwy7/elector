@@ -626,19 +626,16 @@ async def election_cleanup(channel: discord.TextChannel):
     #]
     # Get the end time
     ended_at = datetime.fromtimestamp(conv_to_steg_topic_rev(state[3]))
+    end_time = ended_at + timedelta(hours=config['features']['leader']['overthrow_end_duration'])
     if config['features']['leader']['vice-leader']:
-        # Give them enough time to pick a vice leader
-        end_time = ended_at + timedelta(hours=12) # TODO: add to config, probably just refactor this whole thing
         # Make sure they have enough time
         if end_time < datetime.now():
             # The bot started too late, roll it back
             end_time = datetime.now()
-        if (end_time - datetime.now()) < timedelta(hours=2):
+        if (end_time - datetime.now()) < timedelta(hours=1):
             # The bot started too close to the end
             # During the two hour period, the bot owner should remind the leader to pick a vice because the bot is up again
-            end_time += timedelta(hours=2)
-    else:
-        end_time = ended_at + timedelta(hours=1)
+            end_time += timedelta(hours=1)
     logger.debug("Final election deletion date: %s", str(end_time))
     end_time = datetime.now() + timedelta(seconds=30) # FIXME: TEST ONLY, ALSO TO BE REMOVED
     # Wait until the moment

@@ -60,6 +60,11 @@ features:
     overthrow_kick: false
     # When the leader is overthrown, should a new election start?
     overthrow_election: true
+    # How long after an election end will the channel be deleted? (in hours)
+    # If you have vice-leader enabled, you should set this to 3+ hours to allow them to pick a vice. If it is set to one hour, the bot may automatically set it higher.
+    # If it is disabled, you can lower this to ~1-2 hours
+    # After the channel is deleted is also when the overthrow vote is started (if enabled).
+    overthrow_end_duration: 6
     # Let the leader pick a vice leader after they are elected
     vice-leader: true
     # Force a vice leader to be picked
