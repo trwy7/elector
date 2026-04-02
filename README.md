@@ -49,7 +49,7 @@ services:
       - TZ=America/New_York # Remember to change!
     volumes:
       - ./data:/app/data
-    restart: on-failure
+    restart: unless-stopped
 ```
 </details>
 
