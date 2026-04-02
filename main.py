@@ -1696,10 +1696,15 @@ async def on_message(message: discord.Message | discord.WebhookMessage):
                     uwu_hook = hook
                     break
             if not uwu_hook:
+                # Create a webhook
                 uwu_hook = await message.channel.create_webhook(name="uwu", reason="UwUify used and no webhook available")
+            # Save the original content to be used later
             omsgc = message.content
+            # Delete the original
             await message.delete(reason="UwUified")
+            # Send the new message
             message = await uwu_hook.send(content=uwulib.uwuify(message.content), username=message.author.display_name, avatar_url=message.author.avatar.url, wait=True)
+            # Go through old autoreplies
             for ar in arlist:
                 # Check the regex
                 if re.fullmatch(ar[0], omsgc):
@@ -1707,9 +1712,9 @@ async def on_message(message: discord.Message | discord.WebhookMessage):
                     logger.info("Sending autoreply: %s", ar[1])
                     # Send our reply
                     await message.channel.send(ar[1], reference=message)
-            # return # the message doesnt exist anymore, we should not continue
-        # Time is up, remove them from the dict
-        uwuified.pop(message.author.id)
+        else:
+            # Time is up, remove them from the dict
+            uwuified.pop(message.author.id)
     # Vice leader selection
     if config['features']['leader']['vice-leader'] and message.channel.name == "election" and len(message.mentions) == 1 and conv_to_steg_topic_rev(message.channel.topic.splitlines()[2]) == 3 and LEADER_ROLE.id in get_user_roles(message.author):
         # Make sure nobody already has vice
