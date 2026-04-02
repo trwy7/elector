@@ -45,7 +45,7 @@ Before starting the container, make a `data` directory and run `chown -R 10001:1
 name: elector
 services:
   electoric:
-    image: ghcr.io/trwy7/elector:1.0.1 # You may want to update this with the latest release version. "latest" is mapped to the latest commit, not latest release, and it may contain bugs
+    image: ghcr.io/trwy7/elector:1.0.2 # You may want to update this with the latest release version. "latest" is mapped to the latest commit, not latest release, and it may contain bugs
     user: "10001:10001"
     environment:
       - TZ=America/New_York # Remember to change to your timezone
