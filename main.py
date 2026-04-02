@@ -857,6 +857,19 @@ if config['features']['voice_rooms']['enabled']:
                 perms[VICE_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True)
             for ip in invited_people:
                 perms[ip] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True)
+            perms[interaction.user] = discord.PermissionOverwrite(
+                view_channel=True,
+                send_messages=True,
+                connect=True,
+                priority_speaker=True,
+                mute_members=True,
+                deafen_members=True,
+                move_members=True,
+                speak=True,
+                stream=True,
+                start_embedded_activities=True,
+                manage_permissions=config['features']['voice_rooms']['allow_perm_change']
+            )
             # Create the channel
             crvc = await VOICE_CATEGORY.create_voice_channel(
                 name=name,
@@ -1095,20 +1108,15 @@ if config['features']['voice_rooms']['enabled']:
             user_limit = int(self.children[4].item.value) if self.children[4].item.value.isdigit() else 0
             # Set the permissions
             perms = {
-                SERVER.default_role: discord.PermissionOverwrite(view_channel=False, send_messages=False, connect=False, speak=can_talk, stream=can_stream, set_voice_channel_status=False, start_embedded_activities=False),
-                interaction.user: discord.PermissionOverwrite(
-                    view_channel=True,
-                    send_messages=True,
-                    connect=True,
-                    priority_speaker=True,
-                    mute_members=True,
-                    deafen_members=True,
-                    move_members=True,
-                    speak=True,
-                    stream=True,
-                    start_embedded_activities=True,
-                    manage_permissions=config['features']['voice_rooms']['allow_perm_change']
-                )
+                SERVER.default_role: discord.PermissionOverwrite(
+                    view_channel=False,
+                    send_messages=False,
+                    connect=False,
+                    speak=can_talk,
+                    stream=can_stream,
+                    set_voice_channel_status=False,
+                    start_embedded_activities=False
+                ),
             }
             if priv == 0:
                 perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True, start_embedded_activities=can_play)
@@ -1124,6 +1132,19 @@ if config['features']['voice_rooms']['enabled']:
                 perms[ip] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True, start_embedded_activities=can_play)
             for bp in banned_people:
                 perms[bp] = discord.PermissionOverwrite(view_channel=True, connect=False)
+            perms[interaction.user] = discord.PermissionOverwrite(
+                    view_channel=True,
+                    send_messages=True,
+                    connect=True,
+                    priority_speaker=True,
+                    mute_members=True,
+                    deafen_members=True,
+                    move_members=True,
+                    speak=True,
+                    stream=True,
+                    start_embedded_activities=True,
+                    manage_permissions=config['features']['voice_rooms']['allow_perm_change']
+                )
             # Edit the channel
             await self.ochannel.edit(
                 name=name,
