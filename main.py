@@ -1702,7 +1702,7 @@ async def on_message(message: discord.Message | discord.WebhookMessage):
             # Delete the original
             await message.delete(reason="UwUified")
             # Send the new message
-            message = await uwu_hook.send(content=uwulib.uwuify(message.content), username=message.author.display_name, avatar_url=message.author.avatar.url, wait=True)
+            message = await uwu_hook.send(content=uwulib.uwuify(message.content), username=message.author.display_name, avatar_url=message.author.avatar.url if message.author.avatar else None, wait=True)
             # Go through old autoreplies
             for ar in arlist:
                 # Check the regex
