@@ -1125,7 +1125,7 @@ if config['features']['voice_rooms']['enabled']:
             for bp in banned_people:
                 perms[bp] = discord.PermissionOverwrite(view_channel=True, connect=False)
             # Edit the channel
-            crvc = await self.ochannel.edit(
+            await self.ochannel.edit(
                 name=name,
                 reason=f"{interaction.user.name} requested modification",
                 overwrites=perms,
