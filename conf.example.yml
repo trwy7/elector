@@ -35,6 +35,7 @@ roles:
 
 features:
   leader:
+    # NOTE: No matter the settings here, elections can be manually started by the leader or the server owner account with /startelection
     # NOTE: During an election, people can "vote" for themselves, but it will not count at the end.
     # Have people vote for leader every saturday
     scheduled_elections: true
@@ -48,7 +49,7 @@ features:
     # It can either be the set hour, 5 hours after the set hour, or the set hour but next day
     election_end: 16
     # Start the vote again when the leader leaves
-    # Should work most of the time, but sometimes you may need to run <command> # TODO: Fill in the command
+    # Should work most of the time
     elect_on_leave: true
     # A message that will be sent after the election channel has been set up and unlocked
     # Should include a ping, but you may set an empty string to disable the message

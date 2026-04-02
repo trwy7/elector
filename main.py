@@ -150,7 +150,7 @@ async def on_ready():
     #     raise RuntimeError(f"Unicode steg is in wrong order: {res_topic}")
     
     if found_lv:
-        await restore_election_state(found_lv) # TODO: after development, move after sync_commands
+        await restore_election_state(found_lv) # FIXME: after development, move after sync_commands
     await bot.sync_commands()
     scheduler.start()
 
@@ -691,14 +691,14 @@ async def init_overthrow():
 
 # Commands
 
-## Debug
+## Start election
 
-debug_group = bot.create_group("debug", "Debug commands")
-
-@debug_group.command(name="startelection", description="Run an election") # TODO: Expand this command into one that can be used by the leader
+@bot.slash_command(name="startelection", description="Run a new election") # TODO: Expand this command into one that can be used by the leader
 @discord.guild_only()
-@discord.default_permissions(administrator=True)
-async def start_elect_cmd(ctx: discord.ApplicationContext, reason: str=''):
+async def start_elect_cmd(ctx: discord.ApplicationContext):
+    pl = await get_user_perm_level(ctx.user)
+    if not (ctx.user.guild_permissions.administrator or pl == 4:
+        await ctx.respond("You do not have permission to start an election")
     await ctx.respond("Starting election...", ephemeral=True)
     await election_start(reason=reason)
 
