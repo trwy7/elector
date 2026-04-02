@@ -14,7 +14,7 @@ This bot requires that you have a discord alt account. This alt account needs to
 
 Create a server using the template at https://discord.new/yp7wShJw3bkD
 
-Feel free to rename channels and roles, but do not change permissions on the log channel, the rooms category and votes category. You may also assign additional permissions to roles, but you should not give them manage roles, manage channels, or administrator. If someone can do something they should not be able to, make sure they dont have a role that gives them that permission (use the audit log).
+Feel free to rename channels and roles, but do not change permissions on the log channel, the rooms category and votes category. You may also assign additional permissions to roles, but you should not give them manage roles, manage channels, or administrator. If someone can do something they should not be able to, make sure they dont have a role that gives them that permission (use the audit log). You can rename and change the color of roles, but they should be kept in the same order.
 
 #### I already have a server!
 
@@ -28,7 +28,7 @@ Go to `Installation` on the sidebar, and disable `User Install`, and change the 
 
 Go to `Bot` on the sidebar Disable `Public Bot`, and enable `Server Members Intent` and `Message Content Intent` and save your changes. Then scroll up and generate a new token, copy it and save it for later. Do not make your bot token public.
 
-Go to `OAuth2` on the sidebar, scroll to `OAuth2 URL Generator`, and check `bot`, then scroll to `Bot Permissions` and enable `Administrator`. Scroll to the very bottom and go to the generated URL, and add the bot to your server.
+Go to `OAuth2` on the sidebar, scroll to `OAuth2 URL Generator`, and check `bot`, then scroll to `Bot Permissions` and enable `Administrator`. Scroll to the very bottom and go to the generated URL, and add the bot to your server. After the bot is in your server, go to server settings, then roles, and move the bot role above every other role.
 
 ### Configuration
 
