@@ -149,10 +149,10 @@ async def on_ready():
     # if res_topic != "1234567890":
     #     raise RuntimeError(f"Unicode steg is in wrong order: {res_topic}")
     
-    if found_lv:
-        await restore_election_state(found_lv) # FIXME: after development, move after sync_commands
     await bot.sync_commands()
-    scheduler.start()
+    if found_lv:
+        await restore_election_state(found_lv)
+    scheduler.start() # NOTE: If we start using scheduler for anything other then elections, the election restore will delay the event
 
 # Functions
 
@@ -447,7 +447,6 @@ async def election_wait_and_tally(channel: discord.TextChannel):
         await channel.delete(reason="Unable to decode the end time from the channel topic. Did you manually modify it?")
         logger.error("Unable to decode the end time from the channel topic. Did you manually modify it?")
         return "Could not get/decode end time"
-    end_time = datetime.now() + timedelta(seconds=20) # FIXME: TEST ONLY, REMOVE IN PROD
     # Wait until the end and try to be accurate, negative values continue instantly anyway
     await asyncio.sleep((end_time - datetime.now()).total_seconds() - 15)
     # Wait a little longer
@@ -637,7 +636,6 @@ async def election_cleanup(channel: discord.TextChannel):
             # During the two hour period, the bot owner should remind the leader to pick a vice because the bot is up again
             end_time += timedelta(hours=1)
     logger.debug("Final election deletion date: %s", str(end_time))
-    end_time = datetime.now() + timedelta(seconds=30) # FIXME: TEST ONLY, ALSO TO BE REMOVED
     # Wait until the moment
     await asyncio.sleep((end_time - datetime.now()).total_seconds())
     # Check if a vice-leader was picked
