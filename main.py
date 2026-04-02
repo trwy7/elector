@@ -6,6 +6,7 @@ import shutil
 import asyncio
 import logging
 import functools
+import time
 from datetime import timedelta, datetime
 from threading import Lock
 import yaml
@@ -1781,4 +1782,12 @@ expire_old_vars.start()
 
 # Let's run!
 
-bot.run(config['token'])
+if config['token'] == "whatever_your_token_is":
+    logger.critical("Please fill out the config file. If you need help, check out the README at https://github.com/trwy7/elector/blob/main/README.md")
+    time.sleep(10)
+else:
+    try:
+        bot.run(config['token'])
+    except discord.errors.LoginFailure:
+        logger.critical("Invalid token in config. Please change it.")
+        time.sleep(30)
