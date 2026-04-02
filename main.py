@@ -1482,6 +1482,8 @@ arlist: list[tuple[re.Pattern, str, bool]] = [
     for s in config['features']['fun']['autoreply']
 ]
 
+vice_leader_pick_lock = Lock()
+
 @bot.event
 async def on_message(message: discord.Message | discord.WebhookMessage):
     if isinstance(message.channel, discord.DMChannel):
@@ -1526,25 +1528,26 @@ async def on_message(message: discord.Message | discord.WebhookMessage):
     # Vice leader selection
     if config['features']['leader']['vice-leader'] and message.channel.name == "election" and len(message.mentions) == 1 and conv_to_steg_topic_rev(message.channel.topic.splitlines()[2]) == 3 and LEADER_ROLE.id in get_user_roles(message.author):
         # Make sure nobody already has vice
-        nvice: discord.Role = await SERVER.get_or_fetch(discord.Role, VICE_ROLE.id)
-        if not nvice.members: # TODO: add a Lock
-            if message.mentions[0] == message.author:
-                # Prevent giving self vice, because it screws some permissions
-                await message.channel.send(f"You cannot give yourself {VICE_ROLE.mention}!", reference=discord.MessageReference.from_message(message))
-            if message.mentions[0].bot:
-                # Prevent giving self vice, because it screws some permissions
-                await message.channel.send(f"You cannot give a bot {VICE_ROLE.mention}!", reference=discord.MessageReference.from_message(message))
-            # Add the role
-            await message.mentions[0].add_roles(VICE_ROLE)
-            # Announce it
-            await message.channel.send(f"{message.mentions[0].mention} has been given {VICE_ROLE.mention}!", reference=discord.MessageReference.from_message(message))
-            await ANNOUNCE_CHANNEL.send(f"{message.mentions[0].mention} is the new {VICE_ROLE.mention}")
-            # Log it
-            await admin_log(discord.Embed(
-                color=discord.Color.orange(),
-                title="Vice leader chosen",
-                description=f"{message.author.mention} has given {message.mentions[0].mention} the {VICE_ROLE.mention} role"
-            ))
+        with vice_leader_pick_lock:
+            nvice: discord.Role = await SERVER.get_or_fetch(discord.Role, VICE_ROLE.id)
+            if not nvice.members:
+                if message.mentions[0] == message.author:
+                    # Prevent giving self vice, because it screws some permissions
+                    await message.channel.send(f"You cannot give yourself {VICE_ROLE.mention}!", reference=discord.MessageReference.from_message(message))
+                if message.mentions[0].bot:
+                    # Prevent giving self vice, because it screws some permissions
+                    await message.channel.send(f"You cannot give a bot {VICE_ROLE.mention}!", reference=discord.MessageReference.from_message(message))
+                # Add the role
+                await message.mentions[0].add_roles(VICE_ROLE)
+                # Announce it
+                await message.channel.send(f"{message.mentions[0].mention} has been given {VICE_ROLE.mention}!", reference=discord.MessageReference.from_message(message))
+                await ANNOUNCE_CHANNEL.send(f"{message.mentions[0].mention} is the new {VICE_ROLE.mention}")
+                # Log it
+                await admin_log(discord.Embed(
+                    color=discord.Color.orange(),
+                    title="Vice leader chosen",
+                    description=f"{message.author.mention} has given {message.mentions[0].mention} the {VICE_ROLE.mention} role"
+                ))
 
 # Errors
 
