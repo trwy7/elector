@@ -6,5 +6,5 @@ services:
     environment:
       - TZ=America/New_York # Remember to change!
     volumes:
-      - ./data:/app/data
+      - ./data:/app/data # After the config is generated, you may make this read only
     restart: unless-stopped
