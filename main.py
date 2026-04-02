@@ -1061,7 +1061,7 @@ if config['features']['voice_rooms']['enabled']:
                     ),
                     description="The max amount of people who can be in your VC at once"
                 ),
-                title="Create VC",
+                title="Modify VC",
             )
         async def callback(self, interaction: discord.Interaction):
             await interaction.response.defer(ephemeral=True)
