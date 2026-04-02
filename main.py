@@ -749,12 +749,23 @@ if config['features']['voice_rooms']['enabled']:
                 discord.ui.Label(
                     "Privacy",
                     discord.ui.Select(
-                        placeholder="Lock your room",
+                        placeholder="Lock your VC",
                         options=priv,
                         required=False,
                         max_values=1
                     ),
                     description="Anyone who is this level or higher can join"
+                ),
+                discord.ui.Label(
+                    "Invite people",
+                    discord.ui.Select(
+                        discord.ComponentType.user_select,
+                        placeholder="People to invite",
+                        required=False,
+                        min_values=0,
+                        max_values=25
+                    ),
+                    description="Extra people that can join your VC. They do not need to have the permissions you set above."
                 ),
                 discord.ui.Label(
                     "Features",
@@ -770,7 +781,7 @@ if config['features']['voice_rooms']['enabled']:
                         min_values=0,
                         max_values=4
                     ),
-                    description="Decide what other people can do in your room, you always get everything"
+                    description="Decide what other people can do in your VC, you always get everything"
                 ),
                 discord.ui.Label(
                     "Max people",
@@ -780,32 +791,46 @@ if config['features']['voice_rooms']['enabled']:
                         min_length=0,
                         required=False
                     ),
-                    description="The max amount of people who can be in your room"
+                    description="The max amount of people who can be in your VC at once"
                 ),
                 title="Create VC",
             )
         async def callback(self, interaction: discord.Interaction):
+            # NOTE: Remember to update with modifyvcmodal
             await interaction.response.defer(ephemeral=True)
             # Make sure they have less than the max amount of rooms
             owned = 0
             maxr = config['features']['voice_rooms']['max_rooms']
             for cvc in vc_owners.values():
-                if cvc == interaction.user.id: # type: ignore
+                if cvc == interaction.user.id:
                     owned += 1
                     if owned >= maxr:
                         await interaction.respond(f"You can only have {str(maxr)} room" + ('' if maxr == 1 else 's'), ephemeral=True)
                         return
             # Get the responses
-            name = self.children[0].item.value if self.children[0].item.value else interaction.user.name # type: ignore
-            priv = int(self.children[1].item.values[0]) if len(self.children[1].item.values) == 1 else 0 # type: ignore
-            can_talk = "voice" in self.children[2].item.values
-            can_text = "text" in self.children[2].item.values
-            can_stream = "video" in self.children[2].item.values
-            can_play = "play" in self.children[2].item.values
-            user_limit = int(self.children[3].item.value) if self.children[3].item.value.isdigit() else 0
+            # Name
+            name = self.children[0].item.value if self.children[0].item.value else interaction.user.name
+            # Privacy
+            priv = int(self.children[1].item.values[0]) if len(self.children[1].item.values) == 1 else 0
+            # Invited people
+            invited_people: list[discord.Member] = self.children[2].item.values
+            # Features
+            can_talk = "voice" in self.children[3].item.values
+            can_text = "text" in self.children[3].item.values
+            can_stream = "video" in self.children[3].item.values
+            can_play = "play" in self.children[3].item.values
+            # User limit
+            user_limit = int(self.children[4].item.value) if self.children[4].item.value.isdigit() else 0
             # Set the permissions
             perms = {
-                SERVER.default_role: discord.PermissionOverwrite(view_channel=False, send_messages=False, connect=False, speak=can_talk, stream=can_stream, set_voice_channel_status=False, start_embedded_activities=False),
+                SERVER.default_role: discord.PermissionOverwrite(
+                    view_channel=False,
+                    send_messages=False,
+                    connect=False, speak=can_talk,
+                    stream=can_stream,
+                    set_voice_channel_status=False,
+                    start_embedded_activities=can_play
+                ),
                 interaction.user: discord.PermissionOverwrite(
                     view_channel=True,
                     send_messages=True,
@@ -821,15 +846,17 @@ if config['features']['voice_rooms']['enabled']:
                 )
             }
             if priv == 0:
-                perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True, start_embedded_activities=can_play)
+                perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True)
             else:
-                perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=False, connect=False, start_embedded_activities=False)
+                perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=False, connect=False)
             if priv <= 1:
-                perms[PLUS_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True, start_embedded_activities=can_play)
+                perms[PLUS_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True)
             if priv <= 2:
-                perms[VIP_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True, start_embedded_activities=can_play)
+                perms[VIP_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True)
             if priv <= 3:
-                perms[VICE_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True, start_embedded_activities=can_play)
+                perms[VICE_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True)
+            for ip in invited_people:
+                perms[ip] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True)
             # Create the channel
             crvc = await VOICE_CATEGORY.create_voice_channel(
                 name=name,
@@ -968,6 +995,149 @@ if config['features']['voice_rooms']['enabled']:
         if kick and user.voice and user.voice.channel.id == ctx.user.voice.channel.id:
             await user.move_to(None, reason="Owner kicked user, and they were in vc")
         await ctx.respond("Done", ephemeral=True)
+
+    # Manage VC room
+
+    class ModifyVCModal(discord.ui.DesignerModal):
+        def __init__(self, channel: discord.VoiceChannel):
+            self.ochannel = channel
+            # Get the current privacy level of the channel
+            if channel.permissions_for(GUEST_ROLE).connect:
+                opriv = 0
+            elif channel.permissions_for(PLUS_ROLE).connect:
+                opriv = 1
+            elif channel.permissions_for(VIP_ROLE).connect:
+                opriv = 2
+            elif channel.permissions_for(VICE_ROLE).connect:
+                opriv = 3
+            else:
+                opriv = 4
+            self.opriv = opriv
+            # Setup and show the embed
+            super().__init__(
+                discord.ui.Label(
+                    "Name",
+                    discord.ui.InputText(
+                        placeholder=channel.name,
+                        value=channel.name,
+                        max_length=20,
+                        required=True
+                    )
+                ),
+                discord.ui.Label(
+                    "Invite people",
+                    discord.ui.Select(
+                        discord.ComponentType.user_select,
+                        placeholder="People to invite",
+                        required=False,
+                        min_values=0,
+                        max_values=25
+                    ),
+                    description="Extra people that can join your VC."
+                ),
+                discord.ui.Label(
+                    "Remove people",
+                    discord.ui.Select(
+                        discord.ComponentType.user_select,
+                        placeholder="People to ban",
+                        required=False,
+                        min_values=0,
+                        max_values=25
+                    ),
+                    description="People to ban from your VC. If they are currently in your vc, they will not be kicked, right click them and click \"Disconnect\"."
+                ),
+                discord.ui.Label(
+                    "Features",
+                    discord.ui.Select(
+                        placeholder="Select what people can do",
+                        options=[
+                            discord.SelectOption(label="Voice", value="voice", emoji="📞", default=channel.permissions_for(SERVER.default_role).speak),
+                            discord.SelectOption(label="Text", value="text", emoji="💬", default=channel.permissions_for(LEVEL_ROLE_MAP[opriv]).send_messages if opriv < 4 else True), # This is a best guess system
+                            discord.SelectOption(label="Video", value="video", emoji="📺", default=channel.permissions_for(SERVER.default_role).stream),
+                            discord.SelectOption(label="Activities", value="play", emoji="🎮", default=channel.permissions_for(SERVER.default_role).start_embedded_activities)
+                        ],
+                        required=False,
+                        min_values=0,
+                        max_values=4
+                    ),
+                    description="Decide what other people can do in your VC, you always get everything"
+                ),
+                discord.ui.Label(
+                    "Max people",
+                    discord.ui.InputText(
+                        placeholder="Unlimited",
+                        max_length=2,
+                        min_length=0,
+                        required=False
+                    ),
+                    description="The max amount of people who can be in your VC at once"
+                ),
+                title="Create VC",
+            )
+        async def callback(self, interaction: discord.Interaction):
+            await interaction.response.defer(ephemeral=True)
+            # NOTE: Remember to update with createvcmodal
+            # Get the responses
+            # Name
+            name = self.children[0].item.value if self.children[0].item.value else interaction.user.name
+            # Privacy
+            priv = self.opriv
+            # Invited people
+            invited_people: list[discord.Member] = self.children[1].item.values
+            # Banned people
+            banned_people: list[discord.Member] = self.children[2].item.values
+            # Features
+            can_talk = "voice" in self.children[3].item.values
+            can_text = "text" in self.children[3].item.values
+            can_stream = "video" in self.children[3].item.values
+            can_play = "play" in self.children[3].item.values
+            # User limit
+            user_limit = int(self.children[4].item.value) if self.children[4].item.value.isdigit() else 0
+            # Set the permissions
+            perms = {
+                SERVER.default_role: discord.PermissionOverwrite(view_channel=False, send_messages=False, connect=False, speak=can_talk, stream=can_stream, set_voice_channel_status=False, start_embedded_activities=False),
+                interaction.user: discord.PermissionOverwrite(
+                    view_channel=True,
+                    send_messages=True,
+                    connect=True,
+                    priority_speaker=True,
+                    mute_members=True,
+                    deafen_members=True,
+                    move_members=True,
+                    speak=True,
+                    stream=True,
+                    start_embedded_activities=True,
+                    manage_permissions=config['features']['voice_rooms']['allow_perm_change']
+                )
+            }
+            if priv == 0:
+                perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True, start_embedded_activities=can_play)
+            else:
+                perms[GUEST_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=False, connect=False, start_embedded_activities=False)
+            if priv <= 1:
+                perms[PLUS_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True, start_embedded_activities=can_play)
+            if priv <= 2:
+                perms[VIP_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True, start_embedded_activities=can_play)
+            if priv <= 3:
+                perms[VICE_ROLE] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True, start_embedded_activities=can_play)
+            for ip in invited_people:
+                perms[ip] = discord.PermissionOverwrite(view_channel=True, send_messages=can_text, connect=True, start_embedded_activities=can_play)
+            for bp in banned_people:
+                perms[bp] = discord.PermissionOverwrite(view_channel=True, connect=False)
+            # Edit the channel
+            crvc = await self.ochannel.edit(
+                name=name,
+                reason=f"{interaction.user.name} requested modification",
+                overwrites=perms,
+                user_limit=user_limit
+            )
+
+
+    @vc_cmds.command(name="modify", description="Modify your voice channel")
+    @discord.guild_only()
+    @require_own_vc
+    async def vc_modify_cmd(ctx: discord.ApplicationContext):
+        pass
 
 ## Kicking
 
