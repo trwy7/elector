@@ -972,7 +972,6 @@ if config['features']['kick']['votekick']['enabled']:
     @election_lock(config['features']['kick']['disable_on_election'])
     @commands.cooldown(config['features']['kick']['votekick']['times'], config['features']['kick']['votekick']['cooldown'], commands.BucketType.user)
     async def votekick_cmd(ctx: discord.ApplicationContext, member: discord.Member):
-        # TODO: Delete the channel if they leave
         await ctx.defer(ephemeral=True)
         # Make sure they are in the server
         if not isinstance(member, discord.Member):
@@ -1051,8 +1050,6 @@ if config['features']['plusvote']['enabled']:
     @election_lock(config['features']['plusvote']['disable_during_election'])
     @commands.cooldown(config['features']['plusvote']['times'], config['features']['plusvote']['cooldown'], commands.BucketType.user)
     async def promote_user_cmd(ctx: discord.ApplicationContext, member: discord.Member):
-        # TODO: Delete the channel if they leave
-        # TODO: Make sure there can only be one vote per user
         await ctx.defer(ephemeral=True)
         # Make sure they are in the server
         if not isinstance(member, discord.Member):
@@ -1076,6 +1073,7 @@ if config['features']['plusvote']['enabled']:
         if vperm < 0:
             await ctx.respond("You cannot promote " + member.mention, ephemeral=True)
             return
+        # Check join time
         if member.id in join_dt and (join_dt[member.id] + timedelta(hours=config['features']['plusvote']['required_wait'])) > datetime.now():
             await ctx.respond(f"{member.mention} needs to be in the server for at least {str(config['features']['plusvote']['required_wait'])} hours before you can promote them")
             return
@@ -1288,7 +1286,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
         logger.debug("Saving voice perms for %s", member.name)
         voice_capability_map[(member.id, after.channel.id)] = (after.mute, after.deaf, datetime.now() + timedelta(minutes=config['features']['voice_state_cache_duration']))
     # Restore that state, this might be buggy
-    # TODO: add a Lock to this for race conditions
+    # A lock would be nice here, but I dont know how to add one without also getting the voice state one more time
     if after.channel and before.channel != after.channel:
         if (member.id, after.channel.id) in voice_capability_map and voice_capability_map[(member.id, after.channel.id)][2] > datetime.now():
             logger.debug("Restoring voice perms for %s", member.name)
