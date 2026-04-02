@@ -999,7 +999,7 @@ if config['features']['voice_rooms']['enabled']:
     # Manage VC room
 
     class ModifyVCModal(discord.ui.DesignerModal):
-        def __init__(self, channel: discord.VoiceChannel):
+        def __init__(self, omember: discord.Member, channel: discord.VoiceChannel):
             self.ochannel = channel
             # Get the current privacy level of the channel
             if channel.permissions_for(GUEST_ROLE).connect:
@@ -1013,6 +1013,23 @@ if config['features']['voice_rooms']['enabled']:
             else:
                 opriv = 4
             self.opriv = opriv
+            # Get banned/invited 
+            banlist = []
+            invlist = []
+            for member, overwrite in channel.overwrites.items():
+                if isinstance(member, discord.Role):
+                    # We do not want role permissions
+                    continue
+                if omember.id == member.id:
+                    # They already have all permissions
+                    continue
+                if overwrite.connect:
+                    # They have connect permission
+                    invlist.append(member)
+                else:
+                    # They were banned
+                    # This includes overwrite.connect == None, but the bot should not make it None anyway, so it should be fine
+                    banlist.append(member)
             # Setup and show the embed
             super().__init__(
                 discord.ui.Label(
@@ -1031,7 +1048,8 @@ if config['features']['voice_rooms']['enabled']:
                         placeholder="People to invite",
                         required=False,
                         min_values=0,
-                        max_values=25
+                        max_values=25,
+                        default_values=invlist
                     ),
                     description="Extra people that can join your VC."
                 ),
@@ -1042,7 +1060,8 @@ if config['features']['voice_rooms']['enabled']:
                         placeholder="People to ban",
                         required=False,
                         min_values=0,
-                        max_values=25
+                        max_values=25,
+                        default_values=banlist
                     ),
                     description="People to ban. You may need to kick them by right clicking them and then clicking \"Disconnect\""
                 ),
@@ -1146,7 +1165,7 @@ if config['features']['voice_rooms']['enabled']:
     @discord.guild_only()
     @require_own_vc
     async def vc_modify_cmd(ctx: discord.ApplicationContext):
-        await ctx.send_modal(ModifyVCModal(ctx.user.voice.channel))
+        await ctx.send_modal(ModifyVCModal(ctx.user, ctx.user.voice.channel))
 
 ## Kicking
 
