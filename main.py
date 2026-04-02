@@ -1258,6 +1258,11 @@ async def on_raw_member_remove(payload: discord.RawMemberRemoveEvent):
         title="User left",
         description=smsg
     ))
+    # Check if there are any vote channels for them, and delete any that exist
+    nc: discord.CategoryChannel = await SERVER.get_or_fetch(discord.CategoryChannel, VOTE_CATEGORY.id)
+    for vc in nc.channels:
+        if vc.topic and str(payload.user.id) in vc.topic:
+            await vc.delete(reason="Deleting vote channels of old user")
 
 @bot.event
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
