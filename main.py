@@ -968,34 +968,6 @@ if config['features']['voice_rooms']['enabled']:
         await ctx.user.voice.channel.edit(name=name, reason="Owner requested rename")
         await ctx.respond("Done", ephemeral=True)
 
-    # Invite to VC
-
-    ## TODO: Modal for invite and kick to allow multi user input
-
-    @vc_cmds.command(name="invite", description="Add someone to your voice channel")
-    @discord.guild_only()
-    @option(name="user", description="Who to invite")
-    @require_own_vc
-    async def vc_invite_cmd(ctx: discord.ApplicationContext, user: discord.Member):
-        await ctx.defer(ephemeral=True)
-        await ctx.user.voice.channel.set_permissions(user, connect=True, reason="Owner invited user")
-        await ctx.respond("Done", ephemeral=True)
-
-    # Kick from VC
-    # Just invite but in reverse
-
-    @vc_cmds.command(name="remove", description="Remove someone from your voice channel")
-    @discord.guild_only()
-    @option(name="user", description="Who to remove")
-    @option(name="kick", description="If they are in the channel, kick them")
-    @require_own_vc
-    async def vc_kick_cmd(ctx: discord.ApplicationContext, user: discord.Member, kick: bool=True):
-        await ctx.defer(ephemeral=True)
-        await ctx.user.voice.channel.set_permissions(user, connect=False, reason="Owner removed user")
-        if kick and user.voice and user.voice.channel.id == ctx.user.voice.channel.id:
-            await user.move_to(None, reason="Owner kicked user, and they were in vc")
-        await ctx.respond("Done", ephemeral=True)
-
     # Manage VC room
 
     class ModifyVCModal(discord.ui.DesignerModal):
