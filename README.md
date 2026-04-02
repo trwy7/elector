@@ -34,6 +34,25 @@ Go to `OAuth2` on the sidebar, scroll to `OAuth2 URL Generator`, and check `bot`
 
 Run the bot either using [docker compose](https://github.com/trwy7/elector/blob/main/docker-compose.yaml) (recommended), or by installing dependencies and running main.py
 
+<details>
+   <summary>
+      <h3>▶️ docker-compose.yml</h3>
+   </summary>
+
+```yaml
+name: elector
+services:
+  electoric:
+    build:
+      context: .
+    environment:
+      - TZ=America/New_York # Remember to change!
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+```
+</details>
+
 After first launch, a config file will be created in ./data/config.yml
 
 A lot of configuration requires you to input a user/role/channel id, you can get these by going into discord settings then advanced, then turning on developer mode. Finally, go to the user/role/channel you want the ID for, and right click it and pick copy ID, you can then paste it into the config file. If you are using the template, you should copy the ids of these into your config file:

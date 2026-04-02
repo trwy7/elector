@@ -4,7 +4,7 @@ services:
     build:
       context: .
     environment:
-      - TZ=America/Denver
+      - TZ=America/New_York # Remember to change!
     volumes:
       - ./data:/app/data
     restart: unless-stopped
