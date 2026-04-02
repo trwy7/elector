@@ -36,14 +36,14 @@ Run the bot either using [docker compose](https://github.com/trwy7/elector/blob/
 
 <details>
    <summary>
-      <h3>▶️ docker-compose.yml</h3>
+      <h4>▶️ docker-compose.yml template</h4>
    </summary>
 
 ```yaml
 name: elector
 services:
   electoric:
-    image: ghcr.io/trwy7/elector:latest # You may want to use a specific version here, like 1.0.0 instead of latest
+    image: ghcr.io/trwy7/elector:1.0.0 # You may want to update this with the latest release version. "latest" is mapped to the latest commit, not latest release, and it may contain bugs
     environment:
       - TZ=America/New_York # Remember to change!
     volumes:
