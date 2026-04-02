@@ -43,8 +43,7 @@ Run the bot either using [docker compose](https://github.com/trwy7/elector/blob/
 name: elector
 services:
   electoric:
-    build:
-      context: .
+    image: ghcr.io/trwy7/elector:latest # You may want to use a specific version here, like 1.0.0 instead of latest
     environment:
       - TZ=America/New_York # Remember to change!
     volumes:
