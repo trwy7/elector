@@ -281,9 +281,7 @@ def election_lock(condition):
         @functools.wraps(func)
         async def wrapper(ctx: discord.ApplicationContext, *args, **kwargs):
             # there is probably a better way of doing this
-            rvc = bot.get_channel(VOTE_CATEGORY.id)
-            if not rvc:
-                rvc: discord.CategoryChannel = SERVER.fetch_channel(VOTE_CATEGORY.id)
+            rvc: discord.CategoryChannel = await SERVER.get_or_fetch(discord.CategoryChannel, VOTE_CATEGORY.id)
             for vc in rvc.channels:
                 if vc.name == "election":
                     await ctx.respond("You cannot run this command during an election")
@@ -358,9 +356,7 @@ async def election_start(reason: str=""):
     """
     with leader_vote_lock:
         # Double check no vote is running
-        nc: discord.CategoryChannel = bot.get_channel(VOTE_CATEGORY.id) # Re-check cache
-        if not nc:
-            nc = SERVER.fetch_channel(VOTE_CATEGORY.id) # No cache for some reason, manually fetch the channel
+        nc: discord.CategoryChannel = await SERVER.get_or_fetch(discord.CategoryChannel, VOTE_CATEGORY.id)
         for vc in nc.channels:
             if vc.name == "election":
                 return "There is already an election running"
@@ -988,9 +984,7 @@ if config['features']['kick']['votekick']['enabled']:
             await ctx.respond("You cannot kick yourself", ephemeral=True)
             return
         # Make sure there is not already a vote
-        nc: discord.CategoryChannel = bot.get_channel(VOTE_CATEGORY.id) # Re-check cache
-        if not nc:
-            nc = SERVER.fetch_channel(VOTE_CATEGORY.id) # No cache for some reason, manually fetch the channel
+        nc: discord.CategoryChannel = await SERVER.get_or_fetch(discord.CategoryChannel, VOTE_CATEGORY.id)
         for vc in nc.channels:
             if vc.name.startswith("kick-") and str(member.id) in vc.topic:
                 await ctx.respond("There is already a kick vote going on in " + vc.mention, ephemeral=True)
@@ -1027,7 +1021,6 @@ if config['features']['kick']['forcekick']['enabled']:
     @election_lock(config['features']['kick']['disable_on_election'])
     @commands.cooldown(config['features']['kick']['forcekick']['times'], config['features']['kick']['forcekick']['cooldown'], commands.BucketType.user)
     async def forcekick_cmd(ctx: discord.ApplicationContext, member: discord.Member):
-        # TODO: Delete the channel if they leave
         await ctx.defer(ephemeral=True)
         # Make sure they are in the server
         if not isinstance(member, discord.Member):
@@ -1070,9 +1063,7 @@ if config['features']['plusvote']['enabled']:
             await ctx.respond("You cannot promote yourself", ephemeral=True)
             return
         # Make sure there is not already a vote
-        nc: discord.CategoryChannel = bot.get_channel(VOTE_CATEGORY.id) # Re-check cache
-        if not nc:
-            nc = SERVER.fetch_channel(VOTE_CATEGORY.id) # No cache for some reason, manually fetch the channel
+        nc: discord.CategoryChannel = await SERVER.get_or_fetch(discord.CategoryChannel, VOTE_CATEGORY.id)
         for vc in nc.channels:
             if vc.name.startswith("promote-") and str(member.id) in vc.topic:
                 await ctx.respond("There is already a promotion vote going on in " + vc.mention, ephemeral=True)
@@ -1326,7 +1317,7 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
         return
     channel = bot.get_channel(payload.channel_id) # Check cache
     if not channel:
-        channel = SERVER.fetch_channel(payload.channel_id)
+        channel = await SERVER.fetch_channel(payload.channel_id)
     message: discord.Message = await channel.fetch_message(payload.message_id) # reminder: bot.get_message uses the cache, we cannot use the cache here because it does not get updated here for some reason
     # warning: whole lotta nesting ahead
     # I tried commenting as much as possible, idk if it actually helps readability
