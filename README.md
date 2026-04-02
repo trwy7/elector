@@ -39,7 +39,7 @@ Run the bot either using [docker compose](https://github.com/trwy7/elector/blob/
       <h4>▶️ docker-compose.yml template</h4>
    </summary>
 
-Before starting the container, make a data directory and run `chown -R 10001:10001 data`. You may get permission errors if you do not.
+Before starting the container, make a data directory and run `chown -R 10001:10001 data`. You may get permission errors if you do not. After the config has been created, stop the container, and turn it back on after you have filled out the config.
 
 ```yaml
 name: elector
