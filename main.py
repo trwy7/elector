@@ -1675,7 +1675,7 @@ async def on_message(message: discord.Message | discord.WebhookMessage):
             # It matches!
             logger.info("Sending autoreply: %s", ar[1])
             # If we are going to delete the message, do not reply to it
-            sr = {"reference": message} if not ar[2] else {}
+            sr = {"reference": discord.MessageReference.from_message(message)} if not ar[2] else {}
             # Send our reply
             await message.channel.send(ar[1], **sr)
             # If set to delete the message, delete it
@@ -1711,7 +1711,7 @@ async def on_message(message: discord.Message | discord.WebhookMessage):
                     # It matches!
                     logger.info("Sending autoreply: %s", ar[1])
                     # Send our reply
-                    await message.channel.send(ar[1], reference=message)
+                    await message.channel.send(ar[1], reference=discord.MessageReference.from_message(message))
         else:
             # Time is up, remove them from the dict
             uwuified.pop(message.author.id)
