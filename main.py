@@ -700,7 +700,7 @@ async def start_elect_cmd(ctx: discord.ApplicationContext):
     if not (ctx.user.guild_permissions.administrator or pl == 4):
         await ctx.respond("You do not have permission to start an election")
     await ctx.respond("Starting election...", ephemeral=True)
-    await election_start(reason=reason)
+    await election_start()
 
 ## Voice rooms
 
