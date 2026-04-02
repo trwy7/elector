@@ -697,7 +697,7 @@ async def init_overthrow():
 @discord.guild_only()
 async def start_elect_cmd(ctx: discord.ApplicationContext):
     pl = await get_user_perm_level(ctx.user)
-    if not (ctx.user.guild_permissions.administrator or pl == 4:
+    if not (ctx.user.guild_permissions.administrator or pl == 4):
         await ctx.respond("You do not have permission to start an election")
     await ctx.respond("Starting election...", ephemeral=True)
     await election_start(reason=reason)
@@ -1667,6 +1667,9 @@ async def on_message(message: discord.Message | discord.WebhookMessage):
         return
     # Autoreply
     for ar in arlist:
+        if message.author.id in uwuified and not ar[2]:
+            # We check these later
+            continue
         # Check the regex
         if re.fullmatch(ar[0], message.content):
             # It matches!
@@ -1694,8 +1697,16 @@ async def on_message(message: discord.Message | discord.WebhookMessage):
                     break
             if not uwu_hook:
                 uwu_hook = await message.channel.create_webhook(name="uwu", reason="UwUify used and no webhook available")
-            message = await uwu_hook.send(content=uwulib.uwuify(message.content), username=message.author.display_name, avatar_url=message.author.avatar.url, wait=True)
+            omsgc = message.content
             await message.delete(reason="UwUified")
+            message = await uwu_hook.send(content=uwulib.uwuify(message.content), username=message.author.display_name, avatar_url=message.author.avatar.url, wait=True)
+            for ar in arlist:
+                # Check the regex
+                if re.fullmatch(ar[0], omsgc):
+                    # It matches!
+                    logger.info("Sending autoreply: %s", ar[1])
+                    # Send our reply
+                    await message.channel.send(ar[1], reference=message)
             # return # the message doesnt exist anymore, we should not continue
         # Time is up, remove them from the dict
         uwuified.pop(message.author.id)
