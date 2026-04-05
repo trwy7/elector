@@ -695,15 +695,17 @@ async def init_overthrow():
 
 ## Start election
 
-@bot.slash_command(name="startelection", description="Run a new election")
+@bot.slash_command(name="resign", description="Run a new election")
 @discord.guild_only()
 async def start_elect_cmd(ctx: discord.ApplicationContext):
     pl = await get_user_perm_level(ctx.user)
-    if not (ctx.user.guild_permissions.administrator or pl == 4):
-        await ctx.respond("You do not have permission to start an election")
-    await ctx.respond("Starting election...", ephemeral=True)
-    await election_start()
-
+    if ctx.user.guild_permissions.administrator:
+        await ctx.respond("Starting election...", ephemeral=True)
+        await election_start()
+    if pl == 4:
+        await ctx.respond("ok", ephemeral=True)
+        await election_start(reason=f"{ctx.user.mention} resigned!")
+    await ctx.respond("You do not have permission to start a new election")
 ## Voice rooms
 
 # channelid: ownerid
