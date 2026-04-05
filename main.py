@@ -12,7 +12,9 @@ from threading import Lock
 import yaml
 import discord
 from discord.commands import option
-from discord.ext import commands, tasks # i dislike commands.cooldown, but i don't know any other simple way to do rate limits
+from discord.ext import commands, tasks 
+# i dislike commands.cooldown because if the command errors it still counts for the rate limit, but i don't know any other simple way to do rate limits
+# If there is a better ratelimiter (that is still simple), feel free to make an issue or submit a pr
 from uwuipy import Uwuipy
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -99,7 +101,8 @@ async def on_ready():
     global init_complete, ANNOUNCE_CHANNEL, VOICE_CHANNEL, LOG_CHANNEL, VOICE_CATEGORY, VOTE_CATEGORY, LEADER_ROLE, VICE_ROLE, VIP_ROLE, PLUS_ROLE, GUEST_ROLE, SERVER, LEVEL_ROLE_MAP # pylint: disable=global-statement
     logger.info('Logged in as %s', bot.user)
 
-    # NOTE: If this becomes buggy, consider converting to lambda functions, and fallback to SERVER.fetch_channel
+    # These should always be considered stale, do not use them when you need current information
+    # These are to only be referenced for mentions and ids.
 
     ANNOUNCE_CHANNEL = bot.get_channel(config['channels']['public']) # type: ignore # these return the right type, but pylance dosent know that
     VOICE_CHANNEL = bot.get_channel(config['channels']['voice']) # type: ignore
@@ -792,7 +795,7 @@ if config['features']['voice_rooms']['enabled']:
                 title="Create VC",
             )
         async def callback(self, interaction: discord.Interaction):
-            # NOTE: Remember to update with modifyvcmodal
+            # NOTE: Remember to update with modifyvcmodal because it fully rewrites the channel permissions every update
             await interaction.response.defer(ephemeral=True)
             # Make sure they have less than the max amount of rooms
             owned = 0
@@ -1064,7 +1067,6 @@ if config['features']['voice_rooms']['enabled']:
             )
         async def callback(self, interaction: discord.Interaction):
             await interaction.response.defer(ephemeral=True)
-            # NOTE: Remember to update with createvcmodal
             # Get the responses
             # Name
             name = self.children[0].item.value if self.children[0].item.value else interaction.user.name
@@ -1667,7 +1669,7 @@ async def on_message(message: discord.Message | discord.WebhookMessage):
     # Autoreply
     for ar in arlist:
         if message.author.id in uwuified and not ar[2]:
-            # We check these later
+            # We check these later so we can reply to the right message
             continue
         # Check the regex
         if re.fullmatch(ar[0], message.content):
