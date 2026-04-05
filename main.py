@@ -872,7 +872,7 @@ if config['features']['voice_rooms']['enabled']:
                 await interaction.followup.send(f"You have been moved to {crvc.mention}.", ephemeral=True, delete_after=10)
             else:
                 # Tell them to join it
-                await interaction.followup.send(f"Go join {crvc.mention}, the channel will close automatically in {str(config['features']['voice_rooms']['join_grace'])} seconds if nobody joins.", ephemeral=True, delete_after=config['features']['voice_rooms']['join_grace'] + 2)
+                await interaction.followup.send(f"Go join {crvc.mention}! Tthe channel will automatically be deleted in {str(config['features']['voice_rooms']['join_grace'])} seconds if nobody joins.", ephemeral=True, delete_after=config['features']['voice_rooms']['join_grace'] + 2)
                 # Wait and see
                 await asyncio.sleep(config['features']['voice_rooms']['join_grace'])
                 # Check if anyone is in
