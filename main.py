@@ -288,7 +288,7 @@ def election_lock(condition):
             rvc: discord.CategoryChannel = await SERVER.get_or_fetch(discord.CategoryChannel, VOTE_CATEGORY.id)
             for vc in rvc.channels:
                 if vc.name == "election":
-                    await ctx.respond("You cannot run this command during an election")
+                    await ctx.respond("You cannot run this command during an election", ephemeral=True)
                     return
             return await func(ctx, *args, **kwargs)
         return wrapper
