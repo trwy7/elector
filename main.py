@@ -952,21 +952,6 @@ if config['features']['voice_rooms']['enabled']:
             rmsg = "Done"
         await ctx.respond(rmsg, ephemeral=True)
 
-    # VC rename
-
-    @vc_cmds.command(name="rename", description="Delete your voice channel")
-    @discord.guild_only()
-    @option(name="name", description="The new name for your channel")
-    @require_own_vc
-    async def vc_rename_cmd(ctx: discord.ApplicationContext, name: str):
-        # Verify name
-        if len(name) > 20:
-            await ctx.respond("Name cannot be above 20 characters", ephemeral=True)
-            return
-        # Rename the channel
-        await ctx.user.voice.channel.edit(name=name, reason="Owner requested rename")
-        await ctx.respond("Done", ephemeral=True)
-
     # Manage VC room
 
     class ModifyVCModal(discord.ui.DesignerModal):
