@@ -35,7 +35,7 @@ roles:
 
 features:
   leader:
-    # NOTE: No matter the settings here, elections can be manually started by the leader or the server owner account with /startelection
+    # NOTE: No matter the settings here, elections can be manually started by the leader or the server owner account with /resign
     # NOTE: During an election, people can "vote" for themselves, but it will not count at the end.
     # Have people vote for leader every saturday
     scheduled_elections: true
