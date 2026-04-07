@@ -705,7 +705,7 @@ async def start_elect_cmd(ctx: discord.ApplicationContext):
     if pl == 4:
         await ctx.respond("ok", ephemeral=True)
         await election_start(reason=f"{ctx.user.mention} resigned!")
-    await ctx.respond("You do not have permission to start a new election")
+    await ctx.respond("You do not have permission to start a new election", ephemeral=True)
 ## Voice rooms
 
 # channelid: ownerid
