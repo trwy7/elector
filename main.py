@@ -1466,16 +1466,16 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
         if len(after.channel.members) == 1 and config['features']['announce_main_call']['on_first_join']:
             await ANNOUNCE_CHANNEL.send(f"{member.mention} started a call in {VOICE_CHANNEL.mention}! @everyone")
         elif config['features']['announce_main_call']['on_join']:
-            await ANNOUNCE_CHANNEL.send(f"{member.mention} joined {VOICE_CHANNEL.mention}")
+            await ANNOUNCE_CHANNEL.send(f"{member.mention} joined {VOICE_CHANNEL.mention}", silent=True)
     # Announce leaves of the main channel
     if before.channel and before.channel.id == VOICE_CHANNEL.id and before.channel != after.channel:
         if len(before.channel.members) == 0 and config['features']['announce_main_call']['on_last_leave']:
             if config['features']['announce_main_call']['on_leave']:
-                await ANNOUNCE_CHANNEL.send(f"{member.mention} left and ended the call in {VOICE_CHANNEL.mention}")
+                await ANNOUNCE_CHANNEL.send(f"{member.mention} left and ended the call in {VOICE_CHANNEL.mention}", silent=True)
             else:
-                await ANNOUNCE_CHANNEL.send(f"The call in {VOICE_CHANNEL.mention} has ended")
+                await ANNOUNCE_CHANNEL.send(f"The call in {VOICE_CHANNEL.mention} has ended", silent=True)
         elif config['features']['announce_main_call']['on_leave']:
-            await ANNOUNCE_CHANNEL.send(f"{member.mention} left {VOICE_CHANNEL.mention}")
+            await ANNOUNCE_CHANNEL.send(f"{member.mention} left {VOICE_CHANNEL.mention}", silent=True)
 
 @bot.event
 async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
