@@ -1605,6 +1605,10 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                             nleader = await SERVER.fetch_role(LEADER_ROLE.id)
                         m = None
                         for m in nleader.members:
+                            try:
+                                await m.send("You were overthrown")
+                            except Exception as e:
+                                logger.exception("Failed to send overthrow DM")
                             if config['features']['leader']['overthrow_kick']:
                                 await m.kick(reason="Overthrown")
                             else:
